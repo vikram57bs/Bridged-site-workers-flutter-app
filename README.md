@@ -1,6 +1,7 @@
 **BRIDGED - Construction Site Workers Group Hiring App**
 
  Overview
+ 
 This is a **multilingual Flutter application** designed for construction site workers and contractors. The app facilitates job applications, worker verification, and recruitment statistics, enabling **group hiring** and **individual hiring** efficiently. It is compatible with **all Android versions**.
 
 Project Details
