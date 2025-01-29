@@ -17,6 +17,7 @@ Project Details
 - View and favorite groups they are part of.
 - Maintain a profile for verification by contractors.
 - Manage their current,upcoming and past jobs.
+- admins manage groups , apply for jobs and remove members having reports on them.
 
  For Contractors:
 - Post job recruitments.
@@ -24,11 +25,13 @@ Project Details
 - Recruit individuals or entire groups for a project.
 - View stats and filters about projects, including the number of groups, individuals, and profiles.
 - Favorite groups for future reference.
+- report workers in case of behavourial issues which adds to individual profile and also the the groups they are part of.
 
  Additional Features:
 - Favourites Page appears for both contractors and workers based on their respective preferences.
 - Multi-lingual Support for diverse worker backgrounds.
 - Seamless experience across all Android versions.
+  
 
  Installation
 
