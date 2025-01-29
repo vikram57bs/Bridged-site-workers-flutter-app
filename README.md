@@ -1,6 +1,7 @@
 **BRIDGED - Construction Site Workers Group Hiring App**
 
  Overview
+ 
 This is a **multilingual Flutter application** designed for construction site workers and contractors. The app facilitates job applications, worker verification, and recruitment statistics, enabling **group hiring** and **individual hiring** efficiently. It is compatible with **all Android versions**.
 
 Project Details
@@ -16,6 +17,7 @@ Project Details
 - View and favorite groups they are part of.
 - Maintain a profile for verification by contractors.
 - Manage their current,upcoming and past jobs.
+- admins manage groups , apply for jobs and remove members having reports on them.
 
  For Contractors:
 - Post job recruitments.
@@ -23,18 +25,20 @@ Project Details
 - Recruit individuals or entire groups for a project.
 - View stats and filters about projects, including the number of groups, individuals, and profiles.
 - Favorite groups for future reference.
+- report workers in case of behavourial issues which adds to individual profile and also the the groups they are part of.
 
  Additional Features:
 - Favourites Page appears for both contractors and workers based on their respective preferences.
 - Multi-lingual Support for diverse worker backgrounds.
 - Seamless experience across all Android versions.
+  
 
  Installation
 
 1. Clone the Repository:
    ```sh
-   git clone https://github.com/yourusername/your-repo.git
-   cd your-repo
+   git clone https://github.com/vikram57bs/Bridged-site-workers-flutter-app.git
+   cd Bridged-site-workers-flutter-app
    ```
 
 2. Install Dependencies:
