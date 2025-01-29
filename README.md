@@ -37,8 +37,8 @@ Project Details
 
 1. Clone the Repository:
    ```sh
-   git clone https://github.com/yourusername/your-repo.git
-   cd your-repo
+   git clone https://github.com/vikram57bs/Bridged-site-workers-flutter-app.git
+   cd Bridged-site-workers-flutter-app
    ```
 
 2. Install Dependencies:
