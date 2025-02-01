@@ -6243,177 +6243,106 @@ class _ContractorPageState extends State<ContractorPage> {
           },
         ),
         Expanded(
-          child: ListView.builder(
-            itemCount: typeie == "Individual"
-                ? int.parse('${indreq.length}')
-                : int.parse('${grpreq.length}'), // Example item count
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.all(2.0),
-                child: GFCard(
-                  boxFit: BoxFit.cover,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  titlePosition: GFPosition.start,
-                  title: GFListTile(
-                    avatar: GFAvatar(
-                      backgroundImage: typeie == "individual" &&
-                              decider(typeie, int.parse('${indreq[index]["memb"]["mobile_number"]}'))
-                                  .isEmpty
-                          ? NetworkImage(url, scale: 10.0) as ImageProvider
-                          : typeie == "individual" &&
-                                  decider(
-                                          typeie,
-                                          int.parse(
-                                              '${indreq[index]["memb"]["mobile_number"]}'))
-                                      .isNotEmpty
-                              ? MemoryImage(Uint8List.fromList(decider(
-                                  typeie,
-                                  int.parse(
-                                      '${indreq[index]["memb"]["mobile_number"]}'))))
-                              : typeie == "Group" &&
-                                      decider(
-                                              typeie,
-                                              int.parse(
-                                                  '${grpreq[index]["grp"]["reference_number"]}'))
-                                          .isEmpty
-                                  ? NetworkImage(url, scale: 10.0)
-                                      as ImageProvider
-                                  : MemoryImage(Uint8List.fromList(decider(
-                                      typeie,
-                                      int.parse('${grpreq[index]["grp"]["reference_number"]}')))),
-                    ),
-                    title: Text(
-                      typeie == "Individual"
-                          ? getproname('${indreq[index]["proj_id"]}')
-                          : getproname('${grpreq[index]["proj_id"]}'),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  content: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: typeie == "Group"
-                        ? [
-                            ListTile(
-                              leading: Icon(Icons.people_outline),
-                              title: Text(
-                                  '${getgrpname(int.parse('${grpreq[index]["grp"]["reference_number"]}'))}'),
-                            ),
-                            ListTile(
-                              leading: Icon(Icons.numbers),
-                              title: Text(
-                                  '${grpnop(int.parse('${grpreq[index]["grp"]["reference_number"]}'))}'),
-                            ),
-                            ListTile(
-                              leading: Icon(Icons.note),
-                              title: Text(
-                                  '${getgrpdesc(int.parse('${grpreq[index]["grp"]["reference_number"]}'))}'),
-                            ),
-                            ListTile(
-                              leading: Icon(Icons.man),
-                              title: Text(
-                                  '${grpadn(int.parse('${grpreq[index]["grp"]["reference_number"]}'))}'),
-                            ),
-                          ]
-                        : [
-                            ListTile(
-                              leading: Icon(Icons.man_2_outlined),
-                              title: Text(
-                                  '${getusername(int.parse('${indreq[index]["memb"]["mobile_number"]}'))}'),
-                            ),
-                            ListTile(
-                              leading: Icon(Icons.phone),
-                              title: Text(
-                                  '${indreq[index]["memb"]["mobile_number"]}'),
-                            ),
-                            ListTile(
-                              leading: Icon(Icons.star_border_outlined),
-                              title: Text('Rating'),
-                            ),
-                            ListTile(
-                              leading: Icon(Icons.location_on),
-                              title: Text(
-                                  '${getusercity(int.parse('${indreq[index]["memb"]["mobile_number"]}'))}'),
-                            ),
-                          ],
-                  ),
-                  buttonBar: GFButtonBar(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          IconButton(
-                            onPressed: () async {
-                              // Handle Delete action
-                              typeie == "Group"
-                                  ? await firegroup(
-                                      int.parse(
-                                          '${grpreq[index]["grp"]["reference_number"]}'),
-                                      '${grpreq[index]["proj_id"]}',
-                                      index)
-                                  : await fireind(
-                                      int.parse(
-                                          '${indreq[index]["memb"]["mobile_number"]}'),
-                                      '${indreq[index]["proj_id"]}',
-                                      index);
-                            },
-                            icon: const Icon(Icons.delete),
-                            color: Colors.red,
+          child: (typeie == "Individual" && indreq.isEmpty) ||
+                  (typeie == "Group" && grpreq.isEmpty)
+              ? Center(child: Text("No requests available"))
+              : ListView.builder(
+                  itemCount:
+                      typeie == "Individual" ? indreq.length : grpreq.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: GFCard(
+                        boxFit: BoxFit.cover,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        titlePosition: GFPosition.start,
+                        title: GFListTile(
+                          avatar: GFAvatar(
+                            backgroundImage: typeie == "Individual" &&
+                                    decider(typeie, int.parse('${indreq[index]["memb"]["mobile_number"]}'))
+                                        .isEmpty
+                                ? NetworkImage(url, scale: 10.0)
+                                    as ImageProvider
+                                : typeie == "Individual" &&
+                                        decider(typeie, int.parse('${indreq[index]["memb"]["mobile_number"]}'))
+                                            .isNotEmpty
+                                    ? MemoryImage(Uint8List.fromList(decider(
+                                        typeie,
+                                        int.parse(
+                                            '${indreq[index]["memb"]["mobile_number"]}'))))
+                                    : typeie == "Group" &&
+                                            decider(typeie, int.parse('${grpreq[index]["grp"]["reference_number"]}'))
+                                                .isEmpty
+                                        ? NetworkImage(url, scale: 10.0)
+                                            as ImageProvider
+                                        : MemoryImage(Uint8List.fromList(decider(
+                                            typeie,
+                                            int.parse(
+                                                '${grpreq[index]["grp"]["reference_number"]}')))),
                           ),
-                          typeie == "Group"
-                              ? ElevatedButton(
-                                  onPressed: () {
-                                    //_showMemberDetails(context, 'Member Name ${index + 1}', 'Bengal', '9080677795', '23');
-                                    typeie == "Group"
-                                        ? _showManageModal(int.parse(
-                                            '${grpreq[index]["grp"]["reference_number"]}'))
-                                        : _showMemberDetails(
-                                            context,
-                                            "ali",
-                                            "chennai",
-                                            "908065439",
-                                            int.parse("44"));
-                                  },
-                                  child: const Text('View Details'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromARGB(
-                                        255, 10, 3, 0), // Button color
+                          title: Text(
+                            typeie == "Individual"
+                                ? getproname('${indreq[index]["proj_id"]}')
+                                : getproname('${grpreq[index]["proj_id"]}'),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        content: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: typeie == "Group"
+                              ? [
+                                  ListTile(
+                                    leading: Icon(Icons.people_outline),
+                                    title: Text(
+                                        '${getgrpname(int.parse('${grpreq[index]["grp"]["reference_number"]}'))}'),
                                   ),
-                                )
-                              : const SizedBox(
-                                  width: 1.0,
-                                ),
-                          IconButton(
-                            onPressed: () async {
-                              // Handle Accept action
-                              typeie == "Group"
-                                  ? await hiregroup(
-                                      int.parse(
-                                          '${grpreq[index]["grp"]["reference_number"]}'),
-                                      '${grpreq[index]["proj_id"]}',
-                                      index)
-                                  : await hireind(
-                                      int.parse(
-                                          '${indreq[index]["memb"]["mobile_number"]}'),
-                                      '${indreq[index]["proj_id"]}',
-                                      index);
-                            },
-                            icon: const Icon(
-                                Icons.check_circle), // Replaced with tick icon
-                            color: Colors.green,
-                          ),
-                        ],
+                                  ListTile(
+                                    leading: Icon(Icons.numbers),
+                                    title: Text(
+                                        '${grpnop(int.parse('${grpreq[index]["grp"]["reference_number"]}'))}'),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(Icons.note),
+                                    title: Text(
+                                        '${getgrpdesc(int.parse('${grpreq[index]["grp"]["reference_number"]}'))}'),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(Icons.man),
+                                    title: Text(
+                                        '${grpadn(int.parse('${grpreq[index]["grp"]["reference_number"]}'))}'),
+                                  ),
+                                ]
+                              : [
+                                  ListTile(
+                                    leading: Icon(Icons.man_2_outlined),
+                                    title: Text(
+                                        '${getusername(int.parse('${indreq[index]["memb"]["mobile_number"]}'))}'),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(Icons.phone),
+                                    title: Text(
+                                        '${indreq[index]["memb"]["mobile_number"]}'),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(Icons.star_border_outlined),
+                                    title: Text('Rating'),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(Icons.location_on),
+                                    title: Text(
+                                        '${getusercity(int.parse('${indreq[index]["memb"]["mobile_number"]}'))}'),
+                                  ),
+                                ],
+                        ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
