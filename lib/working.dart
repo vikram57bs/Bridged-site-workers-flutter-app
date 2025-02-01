@@ -1796,6 +1796,21 @@ class _GroupsPageState extends State<GroupsPage> {
                                         color: Colors.red,
                                       )
                                     : SizedBox(width: 1.0),
+                                (getadminnumber('${groupss[index]["_id"]}') ==
+                                        int.parse(
+                                            '${dummems[indexx]["mobile_number"]}'))
+                                    ? IconButton(
+                                        icon: const Icon(Icons.man),
+                                        onPressed: () async {
+                                          // Handle Delete Member action
+                                          //print("pressed");
+                                          // await makedeleteRequest(
+                                          //'${dummems[indexx]["mobile_number"]}');
+                                          //Navigator.pop(context);
+                                        },
+                                        color: Colors.red,
+                                      )
+                                    : SizedBox(width: 1.0),
                               ],
                             ),
                           );
