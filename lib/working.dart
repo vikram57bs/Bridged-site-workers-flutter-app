@@ -6339,6 +6339,72 @@ class _ContractorPageState extends State<ContractorPage> {
                                   ),
                                 ],
                         ),
+                        buttonBar: GFButtonBar(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                IconButton(
+                                  onPressed: () async {
+                                    // Handle Delete action
+                                    typeie == "Group"
+                                        ? await firegroup(
+                                            int.parse(
+                                                '${grpreq[index]["grp"]["reference_number"]}'),
+                                            '${grpreq[index]["proj_id"]}',
+                                            index)
+                                        : await fireind(
+                                            int.parse(
+                                                '${indreq[index]["memb"]["mobile_number"]}'),
+                                            '${indreq[index]["proj_id"]}',
+                                            index);
+                                  },
+                                  icon: const Icon(Icons.delete),
+                                  color: Colors.red,
+                                ),
+                                typeie == "Group"
+                                    ? ElevatedButton(
+                                        onPressed: () {
+                                          typeie == "Group"
+                                              ? _showManageModal(int.parse(
+                                                  '${grpreq[index]["grp"]["reference_number"]}'))
+                                              : _showMemberDetails(
+                                                  context,
+                                                  "ali",
+                                                  "chennai",
+                                                  "908065439",
+                                                  int.parse("44"));
+                                        },
+                                        child: const Text('View Details'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color.fromARGB(
+                                              255, 10, 3, 0),
+                                        ),
+                                      )
+                                    : const SizedBox(width: 1.0),
+                                IconButton(
+                                  onPressed: () async {
+                                    // Handle Accept action
+                                    typeie == "Group"
+                                        ? await hiregroup(
+                                            int.parse(
+                                                '${grpreq[index]["grp"]["reference_number"]}'),
+                                            '${grpreq[index]["proj_id"]}',
+                                            index)
+                                        : await hireind(
+                                            int.parse(
+                                                '${indreq[index]["memb"]["mobile_number"]}'),
+                                            '${indreq[index]["proj_id"]}',
+                                            index);
+                                  },
+                                  icon: const Icon(Icons
+                                      .check_circle), // Replaced with tick icon
+                                  color: Colors.green,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
