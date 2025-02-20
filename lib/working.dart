@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'login.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 void main() {
   runApp(const MyAppp());
@@ -3511,9 +3512,28 @@ class _SettingsPageState extends State<SettingsPage> {
     fetchmyself();
   }
 
+  Future<int?> getAndroidSdkVersion() async {
+    if (Platform.isAndroid) {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      return androidInfo.version.sdkInt;
+    }
+    return null;
+  }
+
   void _pickImage() async {
     final result;
-    PermissionStatus status = await Permission.photos.request();
+    int? sdkVersion = await getAndroidSdkVersion();
+
+    PermissionStatus status;
+
+    if (sdkVersion != null && sdkVersion >= 33) {
+      status = await Permission.photos.request();
+    } else if (sdkVersion != null && sdkVersion >= 30) {
+      status = await Permission.storage.request();
+    } else {
+      status = await Permission.storage.request();
+    }
     if (status.isGranted) {
       result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
