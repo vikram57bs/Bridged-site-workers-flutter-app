@@ -13,6 +13,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'login.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter/foundation.dart';
 
 void main() {
   runApp(const MyAppp());
@@ -3647,46 +3649,53 @@ class _SettingsPageState extends State<SettingsPage> {
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
       }
+
+      // Check for cached image first
+      final cacheManager = DefaultCacheManager();
+      final cachedFile =
+          await cacheManager.getFileFromCache('settings_profile_image');
+
+      if (cachedFile != null) {
+        // If cached image is found, load it immediately
+
+        setState(() async {
+          imageBytes = await cachedFile.file.readAsBytes();
+        });
+      }
+
+      // Make the API call simultaneously
       final response = await http.get(
-          Uri.parse('$envUrl/contractors/myowndata'),
-          headers: headers); // Replace with your API endpoint
+        Uri.parse('$envUrl/contractors/myowndata'),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
-        // If the server returns a successful response
         setState(() {
-          //dumm = json.decode(response.body);
-          //dumm = dumm[0]["posts"]; // Parse JSON data into the list
           mydata = jsonDecode(response.body);
-          ////print("mydata $mydata");
           Map? profilePhoto = mydata[0]!['profile_photo']!;
-          // //print("mapp pp $profilePhoto");
+
           if (profilePhoto?.length == 3) {
-            // //print("hol");
             filename = profilePhoto?['filename'];
             final List<int> imageData =
                 List<int>.from(profilePhoto?['file']?["data"]);
-            imageBytes = Uint8List.fromList(imageData);
-            // Converting to Uint8List
+            final newImageBytes = Uint8List.fromList(imageData);
 
-            // Displaying the image
+            // Only update imageBytes if the image data has changed
+            if (!listEquals(imageBytes, newImageBytes)) {
+              imageBytes = newImageBytes;
+
+              // Cache the new image data
+              cacheManager.putFile(
+                'settings_profile_image',
+                newImageBytes,
+                fileExtension: 'jpg', // Or use the correct extension
+              );
+            }
           } else {
-            //print('No profile photo found for an item');
+            print('No profile photo found for an item');
           }
         });
-
-        ////print(secdum);
-
-        ////print("check");
-        ////print(contractorwithposts);
-        ////print(allposts);
-        ////print("hh");
-        ////print(contractorwithposts);
-
-        //items = dumm;
-        ////print(items);
-        ////print(response.body);
       } else {
-        // If the server doesn't return a 200 response
         throw Exception('Failed to load items ${response.body}');
       }
     } catch (err) {
@@ -3704,29 +3713,12 @@ class _SettingsPageState extends State<SettingsPage> {
       final response = await http.put(url, headers: headers, body: data);
 
       if (response.statusCode == 200) {
-        // Success response
-        //dumma = jsonDecode(response.body);
         _showDialog('language updated successfully');
         ////print(dumma);
       } else {
-        // Failure response
-        ////print(response.body);
-
-        ////print(resp["error"]["errors"]);
-        //final ers = resp as List;
-        //for (var error in ers) {
-        ////print(error['field']);
-        ////print(error['message']);
-        //}
-
-        ////print(ar.)
-        //final asd=JsonDecoder(response.body);
-        //final ss=asd["error"];
         _showDialog("some error occured in fetching ${response.body}");
       }
     } catch (e) {
-      // Catch network or other errors
-      //String s = e.toString();
       _showDialog("error");
     }
   }
@@ -3741,29 +3733,12 @@ class _SettingsPageState extends State<SettingsPage> {
       final response = await http.put(url, headers: headers, body: data);
 
       if (response.statusCode == 200) {
-        // Success response
-        //dumma = jsonDecode(response.body);
         _showDialog('new address is now updated !');
         ////print(dumma);
       } else {
-        // Failure response
-        ////print(response.body);
-
-        ////print(resp["error"]["errors"]);
-        //final ers = resp as List;
-        //for (var error in ers) {
-        ////print(error['field']);
-        ////print(error['message']);
-        //}
-
-        ////print(ar.)
-        //final asd=JsonDecoder(response.body);
-        //final ss=asd["error"];
         _showDialog("some error occured in fetching ${response.body}");
       }
     } catch (e) {
-      // Catch network or other errors
-      //String s = e.toString();
       _showDialog("error");
     }
   }
@@ -3778,30 +3753,12 @@ class _SettingsPageState extends State<SettingsPage> {
       final response = await http.put(url, headers: headers, body: data);
 
       if (response.statusCode == 200) {
-        // Success response
-        //dumma = jsonDecode(response.body);
         _showDialog(
             'password changed successfully. kindly dont share your crendentials with anyone.');
-        ////print(dumma);
       } else {
-        // Failure response
-        ////print(response.body);
-
-        ////print(resp["error"]["errors"]);
-        //final ers = resp as List;
-        //for (var error in ers) {
-        ////print(error['field']);
-        ////print(error['message']);
-        //}
-
-        ////print(ar.)
-        //final asd=JsonDecoder(response.body);
-        //final ss=asd["error"];
         _showDialog("some error occured in fetching ${response.body}");
       }
     } catch (e) {
-      // Catch network or other errors
-      //String s = e.toString();
       _showDialog("error");
     }
   }
@@ -3816,29 +3773,11 @@ class _SettingsPageState extends State<SettingsPage> {
       final response = await http.put(url, headers: headers, body: data);
 
       if (response.statusCode == 200) {
-        // Success response
-        //dumma = jsonDecode(response.body);
         _showDialog('city updated !');
-        ////print(dumma);
       } else {
-        // Failure response
-        ////print(response.body);
-
-        ////print(resp["error"]["errors"]);
-        //final ers = resp as List;
-        //for (var error in ers) {
-        ////print(error['field']);
-        ////print(error['message']);
-        //}
-
-        ////print(ar.)
-        //final asd=JsonDecoder(response.body);
-        //final ss=asd["error"];
         _showDialog("some error occured in fetching ${response.body}");
       }
     } catch (e) {
-      // Catch network or other errors
-      //String s = e.toString();
       _showDialog("error");
     }
   }
@@ -3852,29 +3791,11 @@ class _SettingsPageState extends State<SettingsPage> {
       final response = await http.put(url, headers: headers, body: data);
 
       if (response.statusCode == 200) {
-        // Success response
-        //dumma = jsonDecode(response.body);
         _showDialog('mobile number updated successfully !');
-        ////print(dumma);
       } else {
-        // Failure response
-        ////print(response.body);
-
-        ////print(resp["error"]["errors"]);
-        //final ers = resp as List;
-        //for (var error in ers) {
-        ////print(error['field']);
-        ////print(error['message']);
-        //}
-
-        ////print(ar.)
-        //final asd=JsonDecoder(response.body);
-        //final ss=asd["error"];
         _showDialog("some error occured in fetching ${response.body}");
       }
     } catch (e) {
-      // Catch network or other errors
-      //String s = e.toString();
       _showDialog("error");
     }
   }
@@ -4099,8 +4020,16 @@ class _SettingsPageState extends State<SettingsPage> {
                     FlutterSecureStorage();
                 await secureStorage.write(
                     key: "auth_token", value: "jrub56reccinugnugntxx123");
+                await DefaultCacheManager()
+                    .removeFile('settings_profile_image');
 
                 Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          LoginPage()), // Navigate to LoginPage
+                );
               },
               child: Row(
                 children: [
@@ -4291,12 +4220,6 @@ class _SettingsPageState extends State<SettingsPage> {
                             onPressed: (context) {
                               // Handle sign out
                               _showSignOutConfirmationDialog(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        LoginPage()), // Navigate to LoginPage
-                              );
                             },
                           ),
                           SettingsTile.navigation(
