@@ -15,12 +15,14 @@ import 'login.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyAppp());
 }
 
 List mydata = [];
+List Contractorwithposts = [];
 final String envUrl = dotenv.env['ENVIRONMENT_URL'] ?? 'demourl_notfound_error';
 
 class MyAppp extends StatelessWidget {
@@ -322,9 +324,11 @@ class JobOpeningsPage extends StatefulWidget {
 
 class _JobOpeningsPageState extends State<JobOpeningsPage> {
   List allcontractors = [];
+  List Allcontractors = [];
   List allcontractorss = [];
   List aumm = [];
   List contractorwithposts = [];
+  //List Contractorwithposts = [];
   List contractorwithpostss = [];
   List secdum = [];
   List secdumm = [];
@@ -339,6 +343,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
     super.initState();
     fetchItems();
     fetchadmins();
+    fetchCtems();
     // Fetch data on init
   }
 
@@ -363,50 +368,94 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
     }
   }
 
-  Future<void> fetchItems() async {
+  Future<void> fetchCtems() async {
     try {
-      final response = await http.get(Uri.parse(
-          '$envUrl/contractors/allprojects')); // Replace with your API endpoint
-
+      final response =
+          await http.get(Uri.parse('$envUrl/contractors/allprojects'));
       if (response.statusCode == 200) {
-        // If the server returns a successful response
+        Allcontractors = jsonDecode(response.body);
         setState(() {
-          secdum = [];
-          //dumm = json.decode(response.body);
-          //dumm = dumm[0]["posts"]; // Parse JSON data into the list
+          Contractorwithposts =
+              Allcontractors.where((membe) => membe["posts"].length != 0)
+                  .toList();
+        });
+      }
+    } catch (err) {
+      _showDialog(err.toString());
+    }
+  }
+
+  List<Map<String, dynamic>> serializeAllPosts(
+      List<Map<String, dynamic>> allposts) {
+    return allposts.map((post) {
+      final newPost = Map<String, dynamic>.from(post);
+      if (newPost['profile_photo'] is List<int>) {
+        newPost['profile_photo'] = base64Encode(newPost['profile_photo']);
+      }
+      return newPost;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> deserializeAllPosts(String jsonString) {
+    final List<dynamic> decoded = jsonDecode(jsonString);
+    return decoded.map((post) {
+      final newPost = Map<String, dynamic>.from(post);
+      if (newPost['profile_photo'] is String) {
+        newPost['profile_photo'] = base64Decode(newPost['profile_photo']);
+      }
+      return newPost;
+    }).toList();
+  }
+
+  Future<void> fetchItems() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Step 1: Load cached data
+    final cachedData = prefs.getString('allposts');
+    if (cachedData != null) {
+      final cachedAllPosts = deserializeAllPosts(cachedData);
+      setState(() {
+        allposts = cachedAllPosts;
+        secdum = allposts;
+      });
+    }
+    // Step 2: Fetch fresh data from API
+    try {
+      final response =
+          await http.get(Uri.parse('$envUrl/contractors/allprojects'));
+      if (response.statusCode == 200) {
+        setState(() {
           allcontractors = jsonDecode(response.body);
           contractorwithposts = allcontractors
               .where((membe) => membe["posts"].length != 0)
               .toList();
-          for (var obj in contractorwithposts) {
-            for (var mems in obj["posts"]) {
-              Map das = mems;
-              if (obj["profile_photo"].length == 3) {
-                List hhk = obj["profile_photo"]["file"]["data"];
-                List<int> inti = hhk
-                    .map((element) => int.parse(element.toString()))
-                    .toList();
-                das["profile_photo"] = inti;
-              } else {
-                das["profile_photo"] = "nil";
-              }
-              secdum.add(das);
-            }
-          }
         });
-        ////print(secdum);
-        allposts = secdum;
-        ////print("check");
-        ////print(contractorwithposts);
-        ////print(allposts);
-        ////print("hh");
-        ////print(contractorwithposts);
+        List<Map<String, dynamic>> secdummmm = [];
 
-        //items = dumm;
-        ////print(items);
-        ////print(response.body);
+        for (var obj in contractorwithposts) {
+          for (var mems in obj["posts"]) {
+            Map<String, dynamic> das = Map<String, dynamic>.from(mems);
+            if (obj["profile_photo"].length == 3) {
+              List hhk = obj["profile_photo"]["file"]["data"];
+              List<int> inti = hhk.map((e) => int.parse(e.toString())).toList();
+              das["profile_photo"] = inti;
+            } else {
+              das["profile_photo"] = "nil";
+            }
+            secdummmm.add(das);
+          }
+        }
+        final newSerialized = jsonEncode(serializeAllPosts(secdummmm));
+
+        // Step 3: Compare with cached data
+        if (cachedData == null || cachedData != newSerialized) {
+          prefs.setString('allposts', newSerialized);
+          setState(() {
+            allposts = secdummmm;
+            secdum = allposts;
+          });
+        }
       } else {
-        // If the server doesn't return a 200 response
         throw Exception('Failed to load items ${response.body}');
       }
     } catch (err) {
@@ -623,7 +672,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
 
       if (response.statusCode == 201) {
         // Success response
-        // _showDialog('job applied . kindly wait');
+        _showDialog('job applied successfully');
       } else {
         // Failure response
         ////print(response.body);
@@ -657,7 +706,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
 
       if (response.statusCode == 201) {
         // Success response
-        //_showDialog('job applied . kindly wait');
+        _showDialog('job applied successfully');
         //_showConfirmationModal();
       } else {
         // Failure response
@@ -918,24 +967,39 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                                         const SizedBox(width: 8),
                                         GFIconButton(
                                           onPressed: () {
-                                            for (var ojk
-                                                in contractorwithposts) {
-                                              for (var dfg in ojk["posts"]) {
-                                                if (dfg == allposts[index]) {
-                                                  setState(() {
-                                                    condetails = ojk;
-                                                  });
+                                            //await fetchCtems();
+                                            try {
+                                              for (var ojk
+                                                  in Contractorwithposts) {
+                                                for (var dfg in ojk["posts"]) {
+                                                  if (dfg["_id"] ==
+                                                      allposts[index]["_id"]) {
+                                                    setState(() {
+                                                      condetails = ojk;
+                                                    });
+                                                  }
                                                 }
                                               }
+
+                                              showInfoDialog(
+                                                  context,
+                                                  condetails["name"] ??
+                                                      "loading",
+                                                  condetails["mobile_number"]
+                                                          .toString() ??
+                                                      "loading",
+                                                  condetails["company_name"] ??
+                                                      "loading",
+                                                  condetails["city"] ??
+                                                      "loading",
+                                                  condetails["state"] ??
+                                                      "loading");
+                                            } catch (err) {
+                                              _showDialog(err.toString());
+                                              print(Contractorwithposts);
+                                              print(allposts);
+                                              print(condetails);
                                             }
-                                            showInfoDialog(
-                                                context,
-                                                condetails["name"],
-                                                condetails["mobile_number"]
-                                                    .toString(),
-                                                condetails["company_name"],
-                                                condetails["city"],
-                                                condetails["state"]);
                                           },
                                           icon: const Icon(Icons.info_rounded),
                                           color: Colors.black,
@@ -4022,6 +4086,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     key: "auth_token", value: "jrub56reccinugnugntxx123");
                 await DefaultCacheManager()
                     .removeFile('settings_profile_image');
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('allposts');
 
                 Navigator.of(context).pop();
                 Navigator.push(

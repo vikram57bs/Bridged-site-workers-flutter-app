@@ -13,6 +13,7 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
@@ -22,6 +23,7 @@ import 'working.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'dart:io';
 
 void main() async {
@@ -70,8 +72,9 @@ class _MyAppState extends State<MyApp> {
         //return responseBody['user'];
       } else {
         if (response.statusCode == 401) {
-          setState(() {
+          setState(() async {
             ss = "login";
+            await DefaultCacheManager().removeFile('settings_profile_image');
           });
         }
         if (response.statusCode == 403) {
