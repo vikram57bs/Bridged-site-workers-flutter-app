@@ -4089,6 +4089,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.remove('allposts');
                 await prefs.remove('myposts');
+                await prefs.remove('myprojects');
 
                 Navigator.of(context).pop();
                 Navigator.push(
@@ -4383,6 +4384,17 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
   }
 
   Future<void> fetchItems() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Step 1: Load cached data
+    final cachedData = prefs.getString('myprojects');
+    if (cachedData != null) {
+      final cachedItems = jsonDecode(cachedData);
+      setState(() {
+        items = cachedItems;
+        dumm = cachedItems;
+      });
+    }
     final headers = {"Content-Type": "application/json"};
     final data = jsonEncode({
       "mobile_number": mydata[0]["mobile_number"],
@@ -4393,29 +4405,31 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
         body: data); // Replace with your API endpoint
 
     if (response.statusCode == 200) {
-      // If the server returns a successful response
-      setState(() {
-        items = [];
-        dumm = [];
-        dumma = json.decode(response.body);
-        dumm = dumma[0]["posts"];
-        // //print("dumm dumm: $dumm");
-        for (Map aksa in dumm) {
-          if (dumma[0]["profile_photo"].length == 3) {
-            List hhk = dumma[0]["profile_photo"]["file"]["data"];
-            List<int> inti =
-                hhk.map((element) => int.parse(element.toString())).toList();
-            aksa["profile_photo"] = inti;
-          } else {
-            aksa["profile_photo"] = "nil";
-          }
+      final pumma = json.decode(response.body);
+      final fumm = pumma[0]["posts"];
+
+      for (var aksa in fumm) {
+        if (pumma[0]["profile_photo"].length == 3) {
+          List<int> hhk =
+              List<int>.from(pumma[0]["profile_photo"]["file"]["data"] as List);
+          List<int> inti = hhk.map((e) => int.parse(e.toString())).toList();
+          aksa["profile_photo"] = inti;
+        } else {
+          aksa["profile_photo"] = "nil";
         }
-// Parse JSON data into the list
-      });
-      items = dumm;
-      ////print('dumm: $dumm');
+      }
+
+      final newSerialized = jsonEncode(fumm);
+
+      // Step 3: Compare with cached data
+      if (cachedData == null || cachedData != newSerialized) {
+        await prefs.setString('myprojects', newSerialized);
+        setState(() {
+          items = fumm;
+          dumm = fumm;
+        });
+      }
     } else {
-      // If the server doesn't return a 200 response
       throw Exception('Failed to load items ${response.body}');
     }
   }
@@ -4790,8 +4804,8 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                     avatar: GFAvatar(
                         backgroundImage: items[index]["profile_photo"] == "nil"
                             ? NetworkImage(url, scale: 10.0) as ImageProvider
-                            : MemoryImage(Uint8List.fromList(
-                                items[index]["profile_photo"]))),
+                            : MemoryImage(Uint8List.fromList(List<int>.from(
+                                items[index]["profile_photo"])))),
                     title: Text(
                       '${items[index]["project_name"]}',
                       style: TextStyle(
@@ -5387,28 +5401,6 @@ class _ContractorPageState extends State<ContractorPage> {
       // If the server doesn't return a 200 response
       throw Exception('Failed to load items ${response.body}');
     }
-  }
-
-  List<Map<String, dynamic>> serializeAllPosts(
-      List<Map<String, dynamic>> allposts) {
-    return allposts.map((post) {
-      final newPost = Map<String, dynamic>.from(post);
-      if (newPost['profile_photo'] is List<int>) {
-        newPost['profile_photo'] = base64Encode(newPost['profile_photo']);
-      }
-      return newPost;
-    }).toList();
-  }
-
-  List<Map<String, dynamic>> deserializeAllPosts(String jsonString) {
-    final List<dynamic> decoded = jsonDecode(jsonString);
-    return decoded.map((post) {
-      final newPost = Map<String, dynamic>.from(post);
-      if (newPost['profile_photo'] is String) {
-        newPost['profile_photo'] = base64Decode(newPost['profile_photo']);
-      }
-      return newPost;
-    }).toList();
   }
 
   Future<void> fetchItems() async {
@@ -6020,11 +6012,7 @@ class _ContractorPageState extends State<ContractorPage> {
     List? grpreq = [];
     List? indreqq = [];
     List? grpreqq = [];
-    void ff() async {
-      await fetchItems();
-    }
 
-    ff();
     for (Map pos in dumm) {
       for (Map? meme in pos["workers"]["applied"]["individual"]) {
         Map det = {"proj_id": pos["_id"], "memb": meme};
