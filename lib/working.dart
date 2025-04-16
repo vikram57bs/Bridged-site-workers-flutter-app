@@ -4088,6 +4088,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     .removeFile('settings_profile_image');
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.remove('allposts');
+                await prefs.remove('myposts');
 
                 Navigator.of(context).pop();
                 Navigator.push(
@@ -5388,41 +5389,79 @@ class _ContractorPageState extends State<ContractorPage> {
     }
   }
 
+  List<Map<String, dynamic>> serializeAllPosts(
+      List<Map<String, dynamic>> allposts) {
+    return allposts.map((post) {
+      final newPost = Map<String, dynamic>.from(post);
+      if (newPost['profile_photo'] is List<int>) {
+        newPost['profile_photo'] = base64Encode(newPost['profile_photo']);
+      }
+      return newPost;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> deserializeAllPosts(String jsonString) {
+    final List<dynamic> decoded = jsonDecode(jsonString);
+    return decoded.map((post) {
+      final newPost = Map<String, dynamic>.from(post);
+      if (newPost['profile_photo'] is String) {
+        newPost['profile_photo'] = base64Decode(newPost['profile_photo']);
+      }
+      return newPost;
+    }).toList();
+  }
+
   Future<void> fetchItems() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Step 1: Load cached data
+    final cachedData = prefs.getString('myposts');
+    if (cachedData != null) {
+      final cachedItems = jsonDecode(cachedData);
+      setState(() {
+        items = cachedItems;
+        dumm = cachedItems;
+      });
+    }
+
+    // Step 2: Fetch fresh data from API
     final headers = {"Content-Type": "application/json"};
     final data = jsonEncode({
       "mobile_number": mydata[0]["mobile_number"],
     });
+
     final response = await http.post(
-        Uri.parse('$envUrl/contractors/contractorprojects'),
-        headers: headers,
-        body: data); // Replace with your API endpoint
+      Uri.parse('$envUrl/contractors/contractorprojects'),
+      headers: headers,
+      body: data,
+    );
 
     if (response.statusCode == 200) {
-      // If the server returns a successful response
-      setState(() {
-        items = [];
-        dumm = [];
-        dumma = json.decode(response.body);
-        ////print("dumma $dumma");
-        dumm = dumma[0]["posts"];
-        ////print("dumm : $dumm");
-// Parse JSON data into the list
-        for (Map aksa in dumm) {
-          if (dumma[0]["profile_photo"].length == 3) {
-            List hhk = dumma[0]["profile_photo"]["file"]["data"];
-            List<int> inti =
-                hhk.map((element) => int.parse(element.toString())).toList();
-            aksa["profile_photo"] = inti;
-          } else {
-            aksa["profile_photo"] = "nil";
-          }
+      final pumma = json.decode(response.body);
+      final fumm = pumma[0]["posts"];
+
+      for (var aksa in fumm) {
+        if (pumma[0]["profile_photo"].length == 3) {
+          List<int> hhk =
+              List<int>.from(pumma[0]["profile_photo"]["file"]["data"] as List);
+          List<int> inti = hhk.map((e) => int.parse(e.toString())).toList();
+          aksa["profile_photo"] = inti;
+        } else {
+          aksa["profile_photo"] = "nil";
         }
-      });
-      items = dumm;
-      ////print('dumm: $dumm');
+      }
+
+      final newSerialized = jsonEncode(fumm);
+
+      // Step 3: Compare with cached data
+      if (cachedData == null || cachedData != newSerialized) {
+        await prefs.setString('myposts', newSerialized);
+        setState(() {
+          items = fumm;
+          dumm = fumm;
+        });
+      }
     } else {
-      // If the server doesn't return a 200 response
       throw Exception('Failed to load items ${response.body}');
     }
   }
@@ -6476,7 +6515,8 @@ class _ContractorPageState extends State<ContractorPage> {
                                             ? NetworkImage(url, scale: 10.0)
                                                 as ImageProvider
                                             : MemoryImage(Uint8List.fromList(
-                                                items[index]["profile_photo"])),
+                                                List<int>.from(items[index]
+                                                    ["profile_photo"]))),
                                   ),
                                   title: Text(
                                     '${items[index]["project_name"]}',
