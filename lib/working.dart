@@ -4367,10 +4367,11 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
   List dumma = [];
   List gsmm = [];
   List usmm = [];
-  List allworkingmems = [];
+  List<Map<String, dynamic>> allworkingmems = [];
   List pplingrp = [];
   List dummanyy = [];
   List<int> aqw = [1];
+  String funend = "";
 
   String location = "Chennai";
   String salary = "\$400";
@@ -4708,10 +4709,10 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
     return age;
   }
 
-  void getallworking(String pid) {
+  Future<List<Map<String, dynamic>>> getallworking(String pid) async {
     allworkingmems = [];
-    Map userdat = {};
-    Map guserdat = {};
+    Map<String, dynamic> userdat = {};
+    Map<String, dynamic> guserdat = {};
     List indarr = [];
     List grparr = [];
     List tte = items.where((post) => post["_id"] == pid).toList();
@@ -4746,6 +4747,8 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
         ////print(allworkingmems);
       }
     }
+    return allworkingmems;
+
     ////print("all $allworkingmems");
   }
 
@@ -4840,12 +4843,19 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
                             GFButton(
-                              onPressed: () {
-                                getallworking('${items[index]["_id"]}');
+                              onPressed: () async {
+                                //  setState(() {
+                                //  funend = "loading";
+                                //});
+
                                 _showManageModal(
                                     context,
                                     '${items[index]["project_name"]}',
                                     '${items[index]["_id"]}');
+
+                                // setState(() {
+                                //funend = "completed";
+                                //});
                               },
                               text: "Manage",
                               color: const Color.fromARGB(255, 10, 3, 0),
@@ -5003,66 +5013,144 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
   void _showManageModal(BuildContext context, String groupName, String piiid) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (BuildContext context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 78.0),
-                child: Text(
-                  groupName,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+        return FutureBuilder<List<Map<String, dynamic>>>(
+          future: getallworking(piiid), // this fetches the data
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: const Center(child: CircularProgressIndicator()),
+              );
+            } else if (snapshot.hasError) {
+              return SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: Center(child: Text("Error: ${snapshot.error}")),
+              );
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 92.0),
+                        child: Text("No workers recruited"),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              projectDetails(context, piiid);
+                            },
+                            child: const Text('Project Details'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color.fromARGB(255, 10, 3, 0),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              grpspecific(piiid);
+                              _showManageMModal(context, "All Groups");
+                            },
+                            child: const Text('View Groups'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color.fromARGB(255, 10, 3, 0),
+                            ),
+                          ),
+                          (items
+                                          .where((poss) => poss["_id"] == piiid)
+                                          .toList()[0]["workers"]["completed"]
+                                              ["individual"]
+                                          .length +
+                                      items
+                                          .where((poss) => poss["_id"] == piiid)
+                                          .toList()[0]["workers"]["completed"]
+                                              ["group"]
+                                          .length ==
+                                  0)
+                              ? ElevatedButton(
+                                  onPressed: () async {
+                                    await completejob(piiid);
+                                    await fetchItems();
+                                  },
+                                  child: const Text('Finish'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        const Color.fromARGB(255, 10, 3, 0),
+                                  ),
+                                )
+                              : const SizedBox(width: 1.0),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              Flexible(
-                child: int.parse('${allworkingmems.length}') > 0
-                    ? ListView.builder(
-                        itemCount: int.parse(
-                            '${allworkingmems.length}'), // Example item count
+              );
+            } else {
+              final allworkingmems = snapshot.data!;
+              return Container(
+                height: MediaQuery.of(context).size.height * 0.7,
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text(
+                        groupName,
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    Flexible(
+                      child: ListView.builder(
+                        itemCount: allworkingmems.length,
                         itemBuilder: (context, index) {
+                          final member = allworkingmems[index];
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 CircleAvatar(
-                                  backgroundImage: allworkingmems[index]
-                                                  ?["profile_photo"]
-                                              ?.length ==
-                                          0
-                                      ? NetworkImage(
-                                          'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
-                                        ) as ImageProvider
+                                  backgroundImage: (member["profile_photo"] ==
+                                              null ||
+                                          member["profile_photo"].length == 0)
+                                      ? const NetworkImage(
+                                              'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg')
+                                          as ImageProvider
                                       : MemoryImage(Uint8List.fromList(
-                                          allworkingmems[index]
-                                              ["profile_photo"])),
+                                          member["profile_photo"])),
                                 ),
                                 const SizedBox(width: 20.0),
                                 Text(
-                                  '${allworkingmems[index]["name"]}',
+                                  member["name"],
                                   style: const TextStyle(fontSize: 18),
                                 ),
                                 const SizedBox(width: 20.0),
                                 ElevatedButton(
                                   onPressed: () {
                                     _showMemberDetails(
-                                        context,
-                                        '${allworkingmems[index]["name"]}',
-                                        '${allworkingmems[index]["city"]}',
-                                        allworkingmems[index]["mobile_number"],
-                                        allworkingmems[index]["age"]);
+                                      context,
+                                      member["name"],
+                                      member["city"],
+                                      member["mobile_number"],
+                                      member["age"],
+                                    );
                                   },
                                   child: const Text('View'),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromARGB(
-                                        255, 10, 3, 0), // Button color
+                                    backgroundColor:
+                                        const Color.fromARGB(255, 10, 3, 0),
                                   ),
                                 ),
                                 !checkreport(
@@ -5095,66 +5183,71 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                                         color: Colors.yellow,
                                       )
                                     : const SizedBox(width: 1.0),
+                                const SizedBox(height: 16.0),
+
+                                // Add report logic as needed here
                               ],
                             ),
                           );
                         },
-                      )
-                    : Center(child: Text("no workers recruited")),
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      // Handle Add Member action
-                      projectDetails(context, piiid);
-                    },
-                    child: const Text('Project Details'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color.fromARGB(255, 10, 3, 0), // Button color
+                      ),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Handle Change Admin action
-                      grpspecific(piiid);
-                      _showManageMModal(context, "All Groups");
-                    },
-                    child: const Text('View Groups'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color.fromARGB(255, 10, 3, 0), // Button color
-                    ),
-                  ),
-                  items
-                                  .where((poss) => poss["_id"] == piiid)
-                                  .toList()[0]["workers"]["completed"]
-                                      ["individual"]
-                                  .length +
-                              items
-                                  .where((poss) => poss["_id"] == piiid)
-                                  .toList()[0]["workers"]["completed"]["group"]
-                                  .length ==
-                          0
-                      ? ElevatedButton(
-                          onPressed: () async {
-                            await completejob(piiid);
-                            await fetchItems();
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            // Handle Add Member action
+                            projectDetails(context, piiid);
                           },
-                          child: const Text('Finish'),
+                          child: const Text('Project Details'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color.fromARGB(
                                 255, 10, 3, 0), // Button color
                           ),
-                        )
-                      : const SizedBox(width: 1.0),
-                ],
-              ),
-            ],
-          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            // Handle Change Admin action
+                            grpspecific(piiid);
+                            _showManageMModal(context, "All Groups");
+                          },
+                          child: const Text('View Groups'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(
+                                255, 10, 3, 0), // Button color
+                          ),
+                        ),
+                        items
+                                        .where((poss) => poss["_id"] == piiid)
+                                        .toList()[0]["workers"]["completed"]
+                                            ["individual"]
+                                        .length +
+                                    items
+                                        .where((poss) => poss["_id"] == piiid)
+                                        .toList()[0]["workers"]["completed"]
+                                            ["group"]
+                                        .length ==
+                                0
+                            ? ElevatedButton(
+                                onPressed: () async {
+                                  await completejob(piiid);
+                                  await fetchItems();
+                                },
+                                child: const Text('Finish'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color.fromARGB(
+                                      255, 10, 3, 0), // Button color
+                                ),
+                              )
+                            : const SizedBox(width: 1.0),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
         );
       },
     );
