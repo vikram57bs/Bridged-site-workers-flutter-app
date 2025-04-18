@@ -23,6 +23,9 @@ void main() {
 
 List mydata = [];
 List Contractorwithposts = [];
+List usmm = [];
+Map<String, List<Map<String, dynamic>>> workingMemCache = {};
+
 final String envUrl = dotenv.env['ENVIRONMENT_URL'] ?? 'demourl_notfound_error';
 
 class MyAppp extends StatelessWidget {
@@ -74,6 +77,26 @@ class _HomePageState extends State<HomePage> {
     // TODO: implement initState
     super.initState();
     fetchmyself();
+    fetchusers();
+  }
+
+  Future<void> fetchusers() async {
+    final response = await http.get(Uri.parse(
+        '$envUrl/workers/allusers')); // Replace with your API endpoint
+
+    if (response.statusCode == 200) {
+      // If the server returns a successful response
+      setState(() {
+        usmm = json.decode(response.body);
+        //dumm = dumm[0]["posts"]; // Parse JSON data into the list
+        ////print("users: ${usmm}");
+      });
+      //items = dumm;
+      ////print(items);
+    } else {
+      // If the server doesn't return a 200 response
+      throw Exception('Failed to load items ${response.body}');
+    }
   }
 
   Future<void> fetchmyself() async {
@@ -4355,18 +4378,19 @@ class PremiumPage extends StatelessWidget {
 }
 
 class _ManageWorkersContent extends StatefulWidget {
-  const _ManageWorkersContent({super.key});
+  final List items;
+  const _ManageWorkersContent({super.key, required this.items});
 
   @override
   State<_ManageWorkersContent> createState() => _ManageWorkersContentState();
 }
 
 class _ManageWorkersContentState extends State<_ManageWorkersContent> {
-  List items = [];
+  late List items = [];
   List dumm = [];
   List dumma = [];
   List gsmm = [];
-  List usmm = [];
+  //List usmm = [];
   List<Map<String, dynamic>> allworkingmems = [];
   List pplingrp = [];
   List dummanyy = [];
@@ -4379,9 +4403,11 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
   @override
   void initState() {
     super.initState();
+    items = widget.items;
+    //print("items: ${items}");
     fetchItems();
-    fetchgroups();
     fetchusers();
+    fetchgroups();
   }
 
   Future<void> fetchItems() async {
@@ -4709,32 +4735,57 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
     return age;
   }
 
+  // Define this cache somewhere globally or at class level
+  //Map<String, List<Map<String, dynamic>>> workingMemCache = {};
+
   Future<List<Map<String, dynamic>>> getallworking(String pid) async {
+    // ✅ Return from cache if available
+    if (workingMemCache.containsKey(pid)) {
+      //print("yes its here here");
+      return workingMemCache[pid]!;
+    }
+
     allworkingmems = [];
     Map<String, dynamic> userdat = {};
     Map<String, dynamic> guserdat = {};
     List indarr = [];
     List grparr = [];
+
+    // Ensure `items` is not empty and contains expected structure
     List tte = items.where((post) => post["_id"] == pid).toList();
-    if (tte[0]["workers"]["completed"]["individual"].length +
-            tte[0]["workers"]["completed"]["group"].length !=
+    if (tte.isEmpty || tte[0]["workers"] == null) return [];
+
+    var workers = tte[0]["workers"];
+
+    if (workers["completed"]["individual"].length +
+            workers["completed"]["group"].length !=
         0) {
-      indarr = tte[0]["workers"]["completed"]["individual"];
-      grparr = tte[0]["workers"]["completed"]["group"];
+      indarr = workers["completed"]["individual"];
+      grparr = workers["completed"]["group"];
     } else {
-      indarr = tte[0]["workers"]["current"]["individual"];
-      grparr = tte[0]["workers"]["current"]["group"];
+      indarr = workers["current"]["individual"];
+      grparr = workers["current"]["group"];
     }
 
+    // Process individual workers
     for (Map tvk in indarr) {
       userdat = {};
       userdat["name"] = getusername(tvk["mobile_number"]);
       userdat["city"] = getusercity(tvk["mobile_number"]);
       userdat["mobile_number"] = tvk["mobile_number"];
       userdat["age"] = calcage(getuserdob(tvk["mobile_number"]));
-      userdat["profile_photo"] = getprofilepic(tvk["mobile_number"]);
+
+      // ✅ Decode only once and reuse
+      Uint8List profileBytes =
+          Uint8List.fromList(getprofilepic(tvk["mobile_number"]));
+      userdat["profile_image"] =
+          MemoryImage(profileBytes); // Cached decoded image
+      userdat["profile_photo"] = profileBytes; // Raw bytes if needed
+
       allworkingmems.add(userdat);
     }
+
+    // Process group members
     for (Map tvk in grparr) {
       for (Map dmk in grpmems(tvk["reference_number"])) {
         guserdat = {};
@@ -4742,14 +4793,20 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
         guserdat["city"] = getusercity(dmk["mobile_number"]);
         guserdat["mobile_number"] = dmk["mobile_number"];
         guserdat["age"] = calcage(getuserdob(dmk["mobile_number"]));
-        guserdat["profile_photo"] = getprofilepic(dmk["mobile_number"]);
+
+        Uint8List profileBytes =
+            Uint8List.fromList(getprofilepic(dmk["mobile_number"]));
+        guserdat["profile_image"] = MemoryImage(profileBytes);
+        guserdat["profile_photo"] = profileBytes;
+
         allworkingmems.add(guserdat);
-        ////print(allworkingmems);
       }
     }
-    return allworkingmems;
 
-    ////print("all $allworkingmems");
+    // ✅ Save to cache
+    workingMemCache[pid] = allworkingmems;
+
+    return allworkingmems;
   }
 
   void grpspecific(String pid) {
@@ -5010,7 +5067,49 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
     );
   }
 
-  void _showManageModal(BuildContext context, String groupName, String piiid) {
+  Widget _buildProfileImage(List<int>? imageBytes) {
+    if (imageBytes == null || imageBytes.isEmpty) {
+      return const CircleAvatar(
+        backgroundColor: Colors.white,
+        backgroundImage: NetworkImage(
+          'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
+        ),
+      );
+    }
+
+    final image = MemoryImage(Uint8List.fromList(imageBytes));
+
+    return FutureBuilder<void>(
+      future: precacheImage(image, context), // Preload the image into memory
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return CircleAvatar(
+            backgroundColor: Colors.white,
+            backgroundImage: image,
+          );
+        } else {
+          return const CircleAvatar(
+            backgroundColor: Colors.white,
+            backgroundImage: NetworkImage(
+              'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  void _showManageModal(
+      BuildContext context, String groupName, String piiid) async {
+    if (items.isEmpty) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+      await fetchItems();
+      Navigator.pop(context); // close the loading dialog
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -5121,16 +5220,8 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                CircleAvatar(
-                                  backgroundImage: (member["profile_photo"] ==
-                                              null ||
-                                          member["profile_photo"].length == 0)
-                                      ? const NetworkImage(
-                                              'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg')
-                                          as ImageProvider
-                                      : MemoryImage(Uint8List.fromList(
-                                          member["profile_photo"])),
-                                ),
+                                _buildProfileImage(member["profile_photo"]),
+
                                 const SizedBox(width: 20.0),
                                 Text(
                                   member["name"],
@@ -5140,12 +5231,12 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                                 ElevatedButton(
                                   onPressed: () {
                                     _showMemberDetails(
-                                      context,
-                                      member["name"],
-                                      member["city"],
-                                      member["mobile_number"],
-                                      member["age"],
-                                    );
+                                        context,
+                                        member["name"],
+                                        member["city"],
+                                        member["mobile_number"],
+                                        member["age"],
+                                        member["profile_photo"]);
                                   },
                                   child: const Text('View'),
                                   style: ElevatedButton.styleFrom(
@@ -5360,8 +5451,8 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
     );
   }
 
-  void _showMemberDetails(
-      BuildContext context, String name, String location, int mobile, int age) {
+  void _showMemberDetails(BuildContext context, String name, String location,
+      int mobile, int age, List<int> profp) {
     List<int> cc = [1, 2];
 
     showDialog(
@@ -5373,11 +5464,12 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
             mainAxisSize: MainAxisSize.min,
             children: [
               CircleAvatar(
-                backgroundImage: getprofilepic(mobile).isEmpty
+                backgroundColor: Colors.grey[200],
+                backgroundImage: profp.isEmpty
                     ? NetworkImage(
                         'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
                       ) as ImageProvider
-                    : MemoryImage(Uint8List.fromList(getprofilepic(mobile))),
+                    : MemoryImage(Uint8List.fromList(profp)),
               ),
               Row(
                 children: [
@@ -5435,7 +5527,7 @@ class _ContractorPageState extends State<ContractorPage> {
   String type = 'Both';
   int _selectedIndex = 0;
   String typeie = "Individual";
-  List usmm = [];
+  //List usmm = [];
   List gsmm = [];
 
   final TextEditingController _projnameController = TextEditingController();
@@ -6672,7 +6764,7 @@ class _ContractorPageState extends State<ContractorPage> {
             )
           : _selectedIndex == 2
               ? _buildManageRequests()
-              : _ManageWorkersContent(),
+              : _ManageWorkersContent(items: items),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
               onPressed: _showCreatePostModal,
@@ -7905,6 +7997,7 @@ class _ContsfaveState extends State<Contsfave> {
   List<dynamic> dummems = [];
   List<dynamic> aumm = [];
   List<dynamic> dumma = [];
+  List items = [];
   List fumm = [];
   final TextEditingController _groupnameController = TextEditingController();
   final TextEditingController _groupsizeController = TextEditingController();
@@ -7917,7 +8010,59 @@ class _ContsfaveState extends State<Contsfave> {
   @override
   void initState() {
     super.initState();
-    fetchog(); // Fetch data on init
+    fetchog();
+    fetchItemss(); // Fetch data on init
+  }
+
+  Future<void> fetchItemss() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Step 1: Load cached data
+    final cachedData = prefs.getString('myprojects');
+    if (cachedData != null) {
+      final cachedItems = jsonDecode(cachedData);
+      setState(() {
+        items = cachedItems;
+        //dumm = cachedItems;
+      });
+    }
+    final headers = {"Content-Type": "application/json"};
+    final data = jsonEncode({
+      "mobile_number": mydata[0]["mobile_number"],
+    });
+    final response = await http.post(
+        Uri.parse('$envUrl/contractors/contractorprojects'),
+        headers: headers,
+        body: data); // Replace with your API endpoint
+
+    if (response.statusCode == 200) {
+      final pumma = json.decode(response.body);
+      final fumm = pumma[0]["posts"];
+
+      for (var aksa in fumm) {
+        if (pumma[0]["profile_photo"].length == 3) {
+          List<int> hhk =
+              List<int>.from(pumma[0]["profile_photo"]["file"]["data"] as List);
+          List<int> inti = hhk.map((e) => int.parse(e.toString())).toList();
+          aksa["profile_photo"] = inti;
+        } else {
+          aksa["profile_photo"] = "nil";
+        }
+      }
+
+      final newSerialized = jsonEncode(fumm);
+
+      // Step 3: Compare with cached data
+      if (cachedData == null || cachedData != newSerialized) {
+        await prefs.setString('myprojects', newSerialized);
+        setState(() {
+          items = fumm;
+          //dumm = fumm;
+        });
+      }
+    } else {
+      throw Exception('Failed to load items ${response.body}');
+    }
   }
 
   Future<void> fetchItems() async {
@@ -8262,7 +8407,7 @@ class _ContsfaveState extends State<Contsfave> {
                         context,
                         MaterialPageRoute(
                             builder: (context) =>
-                                const _ManageWorkersContent())),
+                                _ManageWorkersContent(items: items))),
                   },
                   child: const Text('Add favourites'),
                   style: ElevatedButton.styleFrom(
