@@ -16,6 +16,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cached_memory_image/cached_memory_image.dart';
 
 void main() {
   runApp(const MyAppp());
@@ -3935,6 +3936,11 @@ class _SettingsPageState extends State<SettingsPage> {
   void _showLanguageDialog(
       String title, String currentValue, Function(String) onSaved) {
     String selectedValue = currentValue;
+    if (selectedValue == null || selectedValue == "null") {
+      setState(() {
+        selectedValue = "English";
+      });
+    }
 
     showDialog(
       context: context,
@@ -4110,7 +4116,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 await DefaultCacheManager()
                     .removeFile('settings_profile_image');
                 final prefs = await SharedPreferences.getInstance();
-                await prefs.remove('allposts');
+                //await prefs.remove('allposts');
                 await prefs.remove('myposts');
                 await prefs.remove('myprojects');
 
@@ -5067,9 +5073,12 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
     );
   }
 
-  Widget _buildProfileImage(List<int>? imageBytes) {
+  Widget _buildProfileImage(List<int>? imageBytes, String uniqueKey) {
+    const double avatarSize = 40.0; // Adjust as needed
+
     if (imageBytes == null || imageBytes.isEmpty) {
       return const CircleAvatar(
+        radius: avatarSize / 2,
         backgroundColor: Colors.white,
         backgroundImage: NetworkImage(
           'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
@@ -5077,25 +5086,25 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
       );
     }
 
-    final image = MemoryImage(Uint8List.fromList(imageBytes));
-
-    return FutureBuilder<void>(
-      future: precacheImage(image, context), // Preload the image into memory
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return CircleAvatar(
-            backgroundColor: Colors.white,
-            backgroundImage: image,
-          );
-        } else {
-          return const CircleAvatar(
-            backgroundColor: Colors.white,
-            backgroundImage: NetworkImage(
+    return CircleAvatar(
+      radius: avatarSize / 2,
+      backgroundColor: Colors.white,
+      child: ClipOval(
+        child: SizedBox(
+          width: avatarSize,
+          height: avatarSize,
+          child: CachedMemoryImage(
+            bytes: Uint8List.fromList(imageBytes),
+            uniqueKey: uniqueKey,
+            fit: BoxFit.cover,
+            placeholder: Image.network(
               'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
+              fit: BoxFit.cover,
             ),
-          );
-        }
-      },
+            errorWidget: const Icon(Icons.error),
+          ),
+        ),
+      ),
     );
   }
 
@@ -5220,7 +5229,8 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                _buildProfileImage(member["profile_photo"]),
+                                _buildProfileImage(member["profile_photo"],
+                                    member["mobile_number"].toString()),
 
                                 const SizedBox(width: 20.0),
                                 Text(
@@ -5451,10 +5461,10 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
     );
   }
 
+  //import 'package:cached_memory_image/cached_memory_image.dart';
+
   void _showMemberDetails(BuildContext context, String name, String location,
       int mobile, int age, List<int> profp) {
-    List<int> cc = [1, 2];
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -5463,14 +5473,25 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                backgroundColor: Colors.grey[200],
-                backgroundImage: profp.isEmpty
-                    ? NetworkImage(
-                        'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
-                      ) as ImageProvider
-                    : MemoryImage(Uint8List.fromList(profp)),
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: ClipOval(
+                  child: profp.isEmpty
+                      ? Image.network(
+                          'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
+                          fit: BoxFit.cover,
+                        )
+                      : CachedMemoryImage(
+                          uniqueKey: mobile.toString(), // unique per user
+                          bytes: Uint8List.fromList(profp),
+                          placeholder: const CircularProgressIndicator(),
+                          errorWidget: const Icon(Icons.error),
+                          fit: BoxFit.cover,
+                        ),
+                ),
               ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   const Icon(Icons.location_on),
@@ -5494,7 +5515,6 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                   Text(age.toString()),
                 ],
               ),
-              const SizedBox(height: 8.0),
             ],
           ),
           actions: [
