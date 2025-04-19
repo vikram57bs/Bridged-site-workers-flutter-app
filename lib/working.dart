@@ -26,6 +26,7 @@ List mydata = [];
 List Contractorwithposts = [];
 List usmm = [];
 Map<String, List<Map<String, dynamic>>> workingMemCache = {};
+List completedindd = [];
 
 final String envUrl = dotenv.env['ENVIRONMENT_URL'] ?? 'demourl_notfound_error';
 
@@ -368,7 +369,25 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
     fetchItems();
     fetchadmins();
     fetchCtems();
+    fetchcompletedind();
     // Fetch data on init
+  }
+
+  Future<void> fetchcompletedind() async {
+    final response = await http.get(Uri.parse(
+        '$envUrl/contractors/fetchcompleted')); // Replace with your API endpoint
+
+    if (response.statusCode == 200) {
+      // If the server returns a successful response
+      setState(() {
+        completedindd = jsonDecode(response.body);
+      });
+
+      ////print('dumm: $dumm');
+    } else {
+      // If the server doesn't return a 200 response
+      throw Exception('Failed to load items ${response.body}');
+    }
   }
 
   Future<void> fetchadmins() async {
@@ -2671,10 +2690,11 @@ class JobsPage extends StatefulWidget {
 class _JobsPageState extends State<JobsPage> {
   String filt_jobs = "Completed Jobs";
   String work_type = "Individual";
-  List<dynamic> completedind = [];
+  //List<dynamic> completedind = [];
   List dump = [];
   bool loading = true;
   List gsmm = [];
+  List completedind = [];
   @override
   void initState() {
     super.initState();
@@ -2773,7 +2793,7 @@ class _JobsPageState extends State<JobsPage> {
 
   Future<void> decideitemcount() async {
     dump = [];
-    await fetchcompletedind();
+    completedind = completedindd;
     int n = mydata[0]["mobile_number"];
     if (work_type == "Individual" && filt_jobs == "Current Jobs") {
       for (Map k in completedind) {
@@ -3115,7 +3135,11 @@ class _JobsPageState extends State<JobsPage> {
                   },
                 ),
               )
-            : const CircularProgressIndicator()
+            : Center(
+                child: Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Text("OOPS! No Jobs Found"),
+              ))
       ],
     );
   }
@@ -3935,12 +3959,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _showLanguageDialog(
       String title, String currentValue, Function(String) onSaved) {
-    String selectedValue = currentValue;
-    if (selectedValue == null || selectedValue == "null") {
-      setState(() {
-        selectedValue = "English";
-      });
-    }
+    // ✅ Ensure a proper default language before showing the dialog
+    String selectedValue =
+        (currentValue == "null" || currentValue.isEmpty || currentValue == null)
+            ? "English"
+            : currentValue;
 
     showDialog(
       context: context,
@@ -3951,8 +3974,9 @@ class _SettingsPageState extends State<SettingsPage> {
             builder: (BuildContext context, StateSetter setState) {
               return DropdownButton<String>(
                 value: selectedValue,
-                items: [selectedValue, 'English', 'Hindi', 'Telugu', 'Tamil']
-                    .map((String value) {
+                isExpanded: true,
+                items:
+                    ['English', 'Hindi', 'Telugu', 'Tamil'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -3969,9 +3993,8 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: () async {
-                await changelanguage(selectedValue.toString());
+                await changelanguage(selectedValue);
                 onSaved(selectedValue);
-
                 Navigator.of(context).pop();
               },
               child: const Text('Save'),
@@ -4229,15 +4252,26 @@ class _SettingsPageState extends State<SettingsPage> {
                           SettingsTile.navigation(
                             leading: const Icon(Icons.language),
                             title: const Text('Language'),
-                            value: Text('${mydata[0]["language"]}'),
+                            value: mydata[0]["language"] != null
+                                ? Text('${mydata[0]["language"]}')
+                                : Text("English"),
                             onPressed: (context) {
-                              _showLanguageDialog(
-                                  'Language', '${mydata[0]["language"]}',
-                                  (value) {
-                                setState(() {
-                                  language = value;
+                              if (mydata[0]["language"] == null) {
+                                _showLanguageDialog('Language', 'English',
+                                    (value) {
+                                  setState(() {
+                                    language = "English";
+                                  });
                                 });
-                              });
+                              } else {
+                                _showLanguageDialog(
+                                    'Language', '${mydata[0]["language"]}',
+                                    (value) {
+                                  setState(() {
+                                    language = value;
+                                  });
+                                });
+                              }
                             },
                           ),
                           SettingsTile.switchTile(
@@ -5149,7 +5183,8 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.only(
+                          top: 16.0, right: 18.0, bottom: 16.0, left: 8.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -6295,6 +6330,8 @@ class _ContractorPageState extends State<ContractorPage> {
               grpreq.removeAt(indi);
               //print(grpreq);
             });
+            workingMemCache
+                .remove(postid); // Clear cache so modal loads updated data
           } else {
             _showDialog("some error occured in fetching ${response.body}");
           }
@@ -6346,6 +6383,7 @@ class _ContractorPageState extends State<ContractorPage> {
               indreq.removeAt(indi);
               //print(indreq);
             });
+            workingMemCache.remove(postid);
           } else {
             _showDialog("some error occured in fetching ${response.body}");
           }
