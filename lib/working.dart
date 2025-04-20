@@ -1245,7 +1245,7 @@ class GroupsPage extends StatefulWidget {
 
 class _GroupsPageState extends State<GroupsPage> {
   List<dynamic> groupss = [
-    {"name": "loading", "description": "loading"}
+    {"name": "loading...", "description": "loading..."}
   ];
   List<dynamic> dumm = [];
   List<dynamic> dummems = [];
@@ -1256,7 +1256,7 @@ class _GroupsPageState extends State<GroupsPage> {
   Uint8List? bytes;
   String? imageUrl = "";
   FilePickerResult? result;
-  bool loading = false;
+  //bool loading = false;
   final TextEditingController _groupnameController = TextEditingController();
   final TextEditingController _groupsizeController = TextEditingController();
   final TextEditingController _groupdescController = TextEditingController();
@@ -1273,7 +1273,50 @@ class _GroupsPageState extends State<GroupsPage> {
     // Fetch data on init
   }
 
+  List<Map<String, dynamic>> serializeGroups(List<Map<String, dynamic>> data) {
+    return data.map((group) {
+      final newGroup = Map<String, dynamic>.from(group);
+
+      if (group["profile_photo"] is Map &&
+          group["profile_photo"]["file"] is Map &&
+          group["profile_photo"]["file"]["data"] is List) {
+        List<int> intList =
+            List<int>.from(group["profile_photo"]["file"]["data"]);
+        newGroup["profile_photo"]["file"]["data"] = base64Encode(intList);
+      }
+
+      return newGroup;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> deserializeGroups(String jsonString) {
+    final List decoded = jsonDecode(jsonString);
+    return decoded.map<Map<String, dynamic>>((group) {
+      final newGroup = Map<String, dynamic>.from(group);
+
+      if (newGroup["profile_photo"] is Map &&
+          newGroup["profile_photo"]["file"] is Map &&
+          newGroup["profile_photo"]["file"]["data"] is String) {
+        newGroup["profile_photo"]["file"]["data"] =
+            base64Decode(newGroup["profile_photo"]["file"]["data"]);
+      }
+
+      return newGroup;
+    }).toList();
+  }
+
   Future<void> fetchItems() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Load cached data
+    final cachedData = prefs.getString('groupss_cache');
+    if (cachedData != null) {
+      final cachedGroups = deserializeGroups(cachedData);
+      setState(() {
+        groupss = cachedGroups;
+        dumm = cachedGroups;
+      });
+    }
     final headers = {"Content-Type": "application/json"};
     final data = jsonEncode({"mobile_number": mydata[0]["mobile_number"]});
     final response = await http.post(Uri.parse('$envUrl/groups/membergroups'),
@@ -1281,14 +1324,18 @@ class _GroupsPageState extends State<GroupsPage> {
 
     if (response.statusCode == 200) {
       // If the server returns a successful response
-      setState(() {
-        dumm = json.decode(response.body);
+      final List<Map<String, dynamic>> freshGroups =
+          List<Map<String, dynamic>>.from(json.decode(response.body));
 
-        //dumm = dumm[0]["members"]; // Parse JSON data into the list
-        groupss = dumm;
-        //print("gg $groupss");
-        loading = true;
+      final newSerialized = jsonEncode(serializeGroups(freshGroups));
+      setState(() {
+        groupss = freshGroups;
+        dumm = freshGroups;
       });
+
+      if (cachedData == null || cachedData != newSerialized) {
+        await prefs.setString('groupss_cache', newSerialized);
+      }
 
       ////print(items);
     } else {
@@ -1502,8 +1549,70 @@ class _GroupsPageState extends State<GroupsPage> {
     }
   }
 
+  String getusername(int mbbnno) {
+    String name = '';
+    for (Map uu in usmm) {
+      if (uu["mobile_number"] == mbbnno) {
+        name = uu["name"];
+      }
+    }
+    return name;
+  }
+
+  List<int> getuserppic(int mbbnno) {
+    List<int> inti = [];
+    for (Map uu in usmm) {
+      if (uu["mobile_number"] == mbbnno) {
+        if (uu["profile_photo"]?.length == 3) {
+          List hhk = uu["profile_photo"]?["file"]["data"];
+          inti = hhk.map((element) => int.parse(element.toString())).toList();
+        } else {
+          inti = [];
+        }
+      }
+    }
+    return inti;
+  }
+
+  String getusercity(int mbbnno) {
+    String city = '';
+    for (Map uu in usmm) {
+      if (uu["mobile_number"] == mbbnno) {
+        city = uu["city"];
+      }
+    }
+    return city;
+  }
+
+  String getuserdob(int mbbnno) {
+    String city = '';
+    for (Map uu in usmm) {
+      if (uu["mobile_number"] == mbbnno) {
+        city = uu["date_of_birth"];
+      }
+    }
+    return city;
+  }
+
   void _showManageModal(String groupName, int index) async {
-    Future<void> makeadminRequest() async {
+    dummems = [];
+    List memlist = dumm[index]["members"];
+    List<int> mobileNumbers =
+        memlist.map((member) => member['mobile_number'] as int).toList();
+    for (int n in mobileNumbers) {
+      Map memda = {};
+      memda["name"] = getusername(n);
+      memda["date_of_birth"] = getuserdob(n);
+      memda["city"] = getusercity(n);
+      memda["mobile_number"] = n;
+      memda["profile_photo"] = getuserppic(n);
+      print(memda);
+      setState(() {
+        dummems.add(memda);
+      });
+    }
+
+    /*Future<void> makeadminRequest() async {
       List memlist = dumm[index]["members"];
       List<int> mobileNumbers =
           memlist.map((member) => member['mobile_number'] as int).toList();
@@ -1518,7 +1627,9 @@ class _GroupsPageState extends State<GroupsPage> {
 
         if (response.statusCode == 201) {
           // Success response
-          dummems = jsonDecode(response.body);
+          setState(() {
+            dummems = jsonDecode(response.body);
+          });
           //_showDialog('Requested. Kindly wait for confirmation.');
           //print(dummems);
         } else {
@@ -1544,7 +1655,7 @@ class _GroupsPageState extends State<GroupsPage> {
       }
     }
 
-    await makeadminRequest();
+    await makeadminRequest(); */
 
     Future<void> makedeleteRequest(String mbno) async {
       //print(mbno);
@@ -1840,16 +1951,38 @@ class _GroupsPageState extends State<GroupsPage> {
                             child: Row(
                               children: [
                                 CircleAvatar(
+                                  radius: 24, // set your preferred size
+                                  backgroundColor: Colors.grey[200],
+                                  child:
+                                      dummems[indexx]["profile_photo"].length ==
+                                              0
+                                          ? null
+                                          : ClipOval(
+                                              child: CachedMemoryImage(
+                                                bytes: Uint8List.fromList(
+                                                    dummems[indexx]
+                                                        ["profile_photo"]),
+                                                uniqueKey: dummems[indexx]
+                                                        ["mobile_number"]
+                                                    .toString(),
+                                                width: 48,
+                                                height: 48,
+                                                fit: BoxFit.cover,
+                                                placeholder: Image.network(
+                                                  'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
+                                                  fit: BoxFit.cover,
+                                                ),
+                                                errorWidget:
+                                                    const Icon(Icons.error),
+                                              ),
+                                            ),
                                   backgroundImage:
-                                      dummems[indexx]["profile_photo"].length !=
-                                              3
+                                      dummems[indexx]["profile_photo"].length ==
+                                              0
                                           ? NetworkImage(
                                               'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
-                                            ) as ImageProvider
-                                          : MemoryImage(Uint8List.fromList(
-                                              coving(dummems[indexx]
-                                                      ["profile_photo"]["file"]
-                                                  ["data"]))),
+                                            )
+                                          : null,
                                 ),
                                 const SizedBox(width: 16.0),
                                 Expanded(
@@ -1879,7 +2012,13 @@ class _GroupsPageState extends State<GroupsPage> {
                                             .toString(),
                                         age.toString(),
                                         groupss[index]["reference_number"],
-                                        index);
+                                        index,
+                                        dummems[indexx]["profile_photo"]
+                                                    .length ==
+                                                0
+                                            ? "no"
+                                            : "yes",
+                                        indexx);
                                   },
                                   child: const Text('View Details'),
                                   style: ElevatedButton.styleFrom(
@@ -1977,8 +2116,16 @@ class _GroupsPageState extends State<GroupsPage> {
     );
   }
 
-  void _showMemberDetails(BuildContext context, String name, String location,
-      String mobile, String age, int ref_no, int indexc) {
+  void _showMemberDetails(
+      BuildContext context,
+      String name,
+      String location,
+      String mobile,
+      String age,
+      int ref_no,
+      int indexc,
+      String ppyes,
+      int dumind) {
     int getadminnumber(int ind) {
       return int.parse('${groupss[ind]["admin"]}');
     }
@@ -2047,11 +2194,31 @@ class _GroupsPageState extends State<GroupsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               CircleAvatar(
-                backgroundImage: getpropifc(mobile).length == 2
+                radius: 20, // set your preferred size
+                backgroundColor: Colors.grey[200],
+                child: dummems[dumind]["profile_photo"].length == 0
+                    ? null
+                    : ClipOval(
+                        child: CachedMemoryImage(
+                          bytes: Uint8List.fromList(
+                              dummems[dumind]["profile_photo"]),
+                          uniqueKey:
+                              dummems[dumind]["mobile_number"].toString(),
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          placeholder: Image.network(
+                            'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
+                            fit: BoxFit.cover,
+                          ),
+                          errorWidget: const Icon(Icons.error),
+                        ),
+                      ),
+                backgroundImage: dummems[dumind]["profile_photo"].length == 0
                     ? NetworkImage(
                         'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
-                      ) as ImageProvider
-                    : MemoryImage(Uint8List.fromList(getpropifc(mobile))),
+                      )
+                    : null,
               ),
               Row(
                 children: [
@@ -2480,203 +2647,191 @@ class _GroupsPageState extends State<GroupsPage> {
     const url =
         "https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg";
 
-    return loading
-        ? Scaffold(
-            body: Column(
+    return Scaffold(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => _showAddGroupModal(context),
-                        child: const Text('Add Group'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(
-                              255, 10, 3, 0), // Button color
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => _showJoinGroupModal(context),
-                        child: const Text('Join Group'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(
-                              255, 10, 3, 0), // Button color
-                        ),
-                      ),
-                      DropdownButton<String>(
-                        value: filt_size,
-                        items: <String>['any', '20', '30', '40', '50']
-                            .map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) {
-                          setState(() {
-                            filt_size = newValue!;
-                            if (filt_size == 'any') {
-                              groupss = dumm;
-                            } else {
-                              groupss = dumm
-                                  .where((group) =>
-                                      group["size"] ==
-                                      int.parse('${filt_size}'))
-                                  .toList();
-                            }
-                          });
-                        },
-                      ),
-                    ],
+                ElevatedButton(
+                  onPressed: () => _showAddGroupModal(context),
+                  child: const Text('Add Group'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color.fromARGB(255, 10, 3, 0), // Button color
                   ),
                 ),
-                groupss.length != 0
-                    ? Expanded(
-                        child: groupss.length == 0
-                            ? Center(
-                                child:
-                                    Text("no groups found. create a new one ?"))
-                            : ListView.builder(
-                                itemCount: int.parse(
-                                    '${groupss.length}'), // Example item count
-                                itemBuilder: (context, index) {
-                                  return groupss.isNotEmpty
-                                      ? Padding(
-                                          padding: const EdgeInsets.all(5.0),
-                                          child: GFCard(
-                                            boxFit: BoxFit.cover,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(15),
-                                            ),
-                                            titlePosition: GFPosition.start,
-                                            title: GFListTile(
-                                              avatar: GFAvatar(
-                                                backgroundImage: groupss[index]?[
-                                                                "profile_photo"]
-                                                            ?.length !=
-                                                        3
-                                                    ? NetworkImage(url,
-                                                            scale: 10.0)
-                                                        as ImageProvider
-                                                    : MemoryImage(Uint8List.fromList(
-                                                        coving(groupss[index][
-                                                                "profile_photo"]
-                                                            ["file"]["data"]))),
-                                              ),
-                                              title: Text(
-                                                '${groupss[index]["name"]}',
-                                                style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
+                ElevatedButton(
+                  onPressed: () => _showJoinGroupModal(context),
+                  child: const Text('Join Group'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color.fromARGB(255, 10, 3, 0), // Button color
+                  ),
+                ),
+                DropdownButton<String>(
+                  value: filt_size,
+                  items: <String>['any', '20', '30', '40', '50']
+                      .map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      filt_size = newValue!;
+                      if (filt_size == 'any') {
+                        groupss = dumm;
+                      } else {
+                        groupss = dumm
+                            .where((group) =>
+                                group["size"] == int.parse('${filt_size}'))
+                            .toList();
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          groupss.length != 0
+              ? Expanded(
+                  child: groupss.length == 0
+                      ? Center(
+                          child: Text("no groups found. create a new one ?"))
+                      : ListView.builder(
+                          itemCount: int.parse(
+                              '${groupss.length}'), // Example item count
+                          itemBuilder: (context, index) {
+                            return groupss.isNotEmpty
+                                ? Padding(
+                                    padding: const EdgeInsets.all(5.0),
+                                    child: GFCard(
+                                      boxFit: BoxFit.cover,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      titlePosition: GFPosition.start,
+                                      title: GFListTile(
+                                        avatar: GFAvatar(
+                                          backgroundImage: groupss[index]
+                                                          ?["profile_photo"]
+                                                      ?.length !=
+                                                  3
+                                              ? NetworkImage(url, scale: 10.0)
+                                                  as ImageProvider
+                                              : MemoryImage(Uint8List.fromList(
+                                                  coving(groupss[index]
+                                                          ["profile_photo"]
+                                                      ["file"]["data"]))),
+                                        ),
+                                        title: Text(
+                                          '${groupss[index]["name"]}',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      content: Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 10),
+                                        child: Text(
+                                          '${groupss[index]["description"]}',
+                                          textAlign: TextAlign.justify,
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                      buttonBar: GFButtonBar(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                right: 5.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: <Widget>[
+                                                GFButton(
+                                                  onPressed: () {
+                                                    _showManageModal(
+                                                        "${groupss[index]["name"]}",
+                                                        index);
+                                                  },
+                                                  text: "Manage",
+                                                  color: const Color.fromARGB(
+                                                      255, 10, 3, 0),
                                                 ),
-                                              ),
-                                            ),
-                                            content: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 10),
-                                              child: Text(
-                                                '${groupss[index]["description"]}',
-                                                textAlign: TextAlign.justify,
-                                                style: TextStyle(fontSize: 16),
-                                              ),
-                                            ),
-                                            buttonBar: GFButtonBar(
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 5.0),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: <Widget>[
-                                                      GFButton(
-                                                        onPressed: () {
-                                                          _showManageModal(
-                                                              "${groupss[index]["name"]}",
-                                                              index);
-                                                        },
-                                                        text: "Manage",
-                                                        color: const Color
-                                                            .fromARGB(
-                                                            255, 10, 3, 0),
-                                                      ),
-                                                      GFIconButton(
-                                                        onPressed: () async {
-                                                          await fetchfavs();
-                                                          bool calcfav(
-                                                              int ind) {
-                                                            bool a = false;
-                                                            if (fumm[0]["favourites"]
-                                                                    .length ==
-                                                                0) {
-                                                              return a;
-                                                            } else {
-                                                              for (Map i in fumm[
-                                                                      0][
-                                                                  "favourites"]) {
-                                                                if (i["reference_number"] ==
-                                                                    groupss[ind]
-                                                                        [
-                                                                        "reference_number"]) {
-                                                                  a = true;
-                                                                }
-                                                              }
-                                                              return a;
-                                                            }
+                                                GFIconButton(
+                                                  onPressed: () async {
+                                                    await fetchfavs();
+                                                    bool calcfav(int ind) {
+                                                      bool a = false;
+                                                      if (fumm[0]["favourites"]
+                                                              .length ==
+                                                          0) {
+                                                        return a;
+                                                      } else {
+                                                        for (Map i in fumm[0]
+                                                            ["favourites"]) {
+                                                          if (i["reference_number"] ==
+                                                              groupss[ind][
+                                                                  "reference_number"]) {
+                                                            a = true;
                                                           }
-                                                          // Handle Favorite action
+                                                        }
+                                                        return a;
+                                                      }
+                                                    }
+                                                    // Handle Favorite action
 
-                                                          if (calcfav(index) ==
-                                                              false) {
-                                                            await makefavouriteRequest(
-                                                                int.parse(
-                                                                    "${groupss[index]["reference_number"]}"),
-                                                                "create");
-                                                            _showDialog(
-                                                                "added to your favourites");
-                                                          } else {
-                                                            await makefavouriteRequest(
-                                                                int.parse(
-                                                                    "${groupss[index]["reference_number"]}"),
-                                                                "remove");
-                                                            _showDialog(
-                                                                "removed from your favourites");
-                                                          }
-                                                        },
-                                                        icon: Icon(
-                                                            Icons.star_border),
-                                                        color: Colors.blue,
-                                                      ),
-                                                      GFButton(
-                                                        onPressed: () {
-                                                          //_showManageModal("TRIPURA WORKERS");
-                                                          _showLeaveOutConfirmationDialog(
-                                                              context, index);
-                                                        },
-                                                        text: "Leave",
-                                                        color: Colors.red,
-                                                      ),
-                                                    ],
-                                                  ),
+                                                    if (calcfav(index) ==
+                                                        false) {
+                                                      await makefavouriteRequest(
+                                                          int.parse(
+                                                              "${groupss[index]["reference_number"]}"),
+                                                          "create");
+                                                      _showDialog(
+                                                          "added to your favourites");
+                                                    } else {
+                                                      await makefavouriteRequest(
+                                                          int.parse(
+                                                              "${groupss[index]["reference_number"]}"),
+                                                          "remove");
+                                                      _showDialog(
+                                                          "removed from your favourites");
+                                                    }
+                                                  },
+                                                  icon: Icon(Icons.star_border),
+                                                  color: Colors.blue,
+                                                ),
+                                                GFButton(
+                                                  onPressed: () {
+                                                    //_showManageModal("TRIPURA WORKERS");
+                                                    _showLeaveOutConfirmationDialog(
+                                                        context, index);
+                                                  },
+                                                  text: "Leave",
+                                                  color: Colors.red,
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        )
-                                      : const CircularProgressIndicator();
-                                },
-                              ),
-                      )
-                    : const Text("no groups found.create a new one"),
-              ],
-            ),
-          )
-        : Scaffold(body: Center(child: CircularProgressIndicator()));
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : const CircularProgressIndicator();
+                          },
+                        ),
+                )
+              : const Text("no groups found.create a new one"),
+        ],
+      ),
+    );
   }
 }
 
@@ -7382,15 +7537,13 @@ class _GroupsfaveState extends State<Groupsfave> {
                       child: Row(
                         children: [
                           CircleAvatar(
-                            backgroundImage: dummems[indexx]["profile_photo"]
-                                        .length !=
-                                    3
-                                ? NetworkImage(
-                                    'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
-                                    scale: 10.0) as ImageProvider
-                                : MemoryImage(Uint8List.fromList(coving(
-                                    dummems[indexx]["profile_photo"]["file"]
-                                        ["data"]))),
+                            backgroundImage:
+                                dummems[indexx]["profile_photo"].length == 0
+                                    ? NetworkImage(
+                                        'https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg',
+                                      ) as ImageProvider
+                                    : MemoryImage(Uint8List.fromList(
+                                        dummems[indexx]["profile_photo"])),
                           ),
                           const SizedBox(width: 16.0),
                           Expanded(
