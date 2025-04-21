@@ -59,12 +59,12 @@ class _LoginPageState extends State<LoginPage> {
         // Store the token securely
         // _showDialog('received token is $token');
         await secureStorage.write(key: 'auth_token', value: token);
-        // Login successful
         Navigator.push(
           context,
           MaterialPageRoute(
               builder: (context) => MyAppp()), // Navigate to LoginPage
         );
+        // Login successful
       } else if (response.statusCode == 404) {
         // Login failed
 

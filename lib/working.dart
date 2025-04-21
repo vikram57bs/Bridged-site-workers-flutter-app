@@ -76,10 +76,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    fetchmyself();
-    fetchusers();
+
+    fetchmyself().then((_) {
+      Future.microtask(() => fetchusers());
+    });
   }
 
   Future<void> fetchusers() async {
