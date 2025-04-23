@@ -1062,7 +1062,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                                     Padding(
                                       padding: EdgeInsets.only(left: 10.0),
                                       child: Text(
-                                        '${allposts[index]["salary"]}',
+                                        '₹${allposts[index]["salary"]}',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -1295,14 +1295,6 @@ class _CurrentJobPageState extends State<CurrentJobPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Manage Jobs',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color.fromARGB(255, 10, 3, 0),
-        centerTitle: true,
-      ),
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -6967,13 +6959,6 @@ class _ContractorPageState extends State<ContractorPage> {
         "https://static.vecteezy.com/system/resources/previews/002/534/006/original/social-media-chatting-online-blank-profile-picture-head-and-body-icon-people-standing-icon-grey-background-free-vector.jpg";
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Contractor Page',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
       body: _selectedIndex == 0
           ? Column(
               children: [

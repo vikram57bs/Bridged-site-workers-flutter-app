@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         child: SingleChildScrollView(
-          padding: EdgeInsets.only(top: 100.0, left: 10.0, right: 10.0),
+          padding: EdgeInsets.only(top: 170.0, left: 10.0, right: 10.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
