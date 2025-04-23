@@ -25,6 +25,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'dart:io';
+import 'dart:async';
 
 void main() async {
   await dotenv.load(fileName: "assets/.env");
@@ -112,7 +113,7 @@ class _MyAppState extends State<MyApp> {
       title: 'Construction Worker App',
       theme: ThemeData(
         primarySwatch: Colors.brown, // Use a color representing bricks
-        scaffoldBackgroundColor: Colors.orange[100], // Sand color background
+        scaffoldBackgroundColor: Colors.amber[100], // Sand color background
         textTheme: const TextTheme(
           headlineMedium:
               TextStyle(color: Colors.brown, fontWeight: FontWeight.bold),
@@ -129,66 +130,146 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
   @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  String fullText = "Connects to Commute.";
+  String visibleText = "";
+  int _charIndex = 0;
+  double _buttonOpacity = 0.0;
+  @override
+  void initState() {
+    super.initState();
+
+    // Wait 3 seconds before starting the typing effect
+    Future.delayed(Duration(seconds: 2), () {
+      Timer.periodic(Duration(milliseconds: 100), (timer) {
+        if (_charIndex < fullText.length) {
+          setState(() {
+            visibleText += fullText[_charIndex];
+            _charIndex++;
+          });
+        } else {
+          timer.cancel();
+        }
+      });
+      setState(() {
+        _buttonOpacity = 1.0;
+      });
+    });
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const ContractorPage()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(
-                    255, 10, 3, 0), // Button color representing bricks
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                textStyle: Theme.of(context).textTheme.headlineMedium,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 48.0),
+              child: Container(
+                  width: 100.0,
+                  height: 200.0,
+                  child: Image.asset('images/applogico.png')),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 30.0),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 60.0),
+                child: Text(
+                  visibleText,
+                  style: TextStyle(
+                    fontSize: 28.0,
+                    fontFamily: 'Cursive',
+                  ),
+                ),
               ),
-              child: const Text('CONTRACTOR'),
+            ),
+
+            AnimatedOpacity(
+              duration: Duration(seconds: 3),
+              opacity: _buttonOpacity,
+              curve: Curves.easeInOut,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ContractorPage(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[600], // Bricks color
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  textStyle: Theme.of(context).textTheme.headlineMedium,
+                  foregroundColor: Colors.amber[50],
+                ),
+                child: const Text(
+                  'CONTRACTOR',
+                  style: TextStyle(fontSize: 18.0),
+                ),
+              ),
             ),
             const SizedBox(height: 30), // Space between the buttons
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BuilderPage()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(
-                    255, 0, 0, 0), // Button color representing bricks
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                textStyle: Theme.of(context).textTheme.headlineMedium,
+            AnimatedOpacity(
+              opacity: _buttonOpacity,
+              duration: Duration(seconds: 4),
+              curve: Curves.easeInOut,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BuilderPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      Colors.grey[600], // Button color representing bricks
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  textStyle: Theme.of(context).textTheme.headlineMedium,
+                  foregroundColor: Colors.amber[50],
+                ),
+                child: const Text(
+                  'BUILDER',
+                  style: TextStyle(fontSize: 18.0),
+                ),
               ),
-              child: const Text('BUILDER'),
             ),
+
             const SizedBox(height: 30), // Space between the buttons
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(
-                    255, 0, 0, 0), // Button color representing bricks
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                textStyle: Theme.of(context).textTheme.headlineMedium,
+            AnimatedOpacity(
+              opacity: _buttonOpacity,
+              duration: Duration(seconds: 5),
+              curve: Curves.easeInOut,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      Colors.grey[500], // Button color representing bricks
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  textStyle: Theme.of(context).textTheme.headlineMedium,
+                  foregroundColor: Colors.amber[50],
+                ),
+                child: const Text(
+                  'SIGN IN',
+                  style: TextStyle(fontSize: 18.0),
+                ),
               ),
-              child: const Text('SIGN IN'),
             ),
           ],
         ),
@@ -221,7 +302,7 @@ class _ContractorPageState extends State<ContractorPage> {
 
   @override
   void initState() {
-    super.dispose();
+    super.initState();
   }
 
   void dispose() {
@@ -429,13 +510,14 @@ class _ContractorPageState extends State<ContractorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange[100],
+      backgroundColor: Colors.grey[400],
       appBar: AppBar(
         title: const Text(
           'Contractor Details',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.black, // Match the button color
+        backgroundColor: Colors.black,
+        centerTitle: true, // Match the button color
       ),
       body: Center(
         child: Padding(
@@ -444,11 +526,14 @@ class _ContractorPageState extends State<ContractorPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: TextField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -572,8 +657,8 @@ class _BuilderPageState extends State<BuilderPage> {
           'Builder Language Selection',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor:
-            const Color.fromARGB(255, 0, 0, 0), // Match the button color
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        centerTitle: true, // Match the button color
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -798,13 +883,14 @@ class _BuilderDetailsPageState extends State<BuilderDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange[100],
+      backgroundColor: Colors.grey[400],
       appBar: AppBar(
         title: const Text(
           'Builder Details',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -814,11 +900,15 @@ class _BuilderDetailsPageState extends State<BuilderDetailsPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               // Name field
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    border:
+                        OutlineInputBorder(borderSide: BorderSide(width: 0.5)),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -827,7 +917,8 @@ class _BuilderDetailsPageState extends State<BuilderDetailsPage> {
                 controller: _dobController,
                 decoration: const InputDecoration(
                   labelText: 'Date of Birth (yyyy-mm-dd)',
-                  border: OutlineInputBorder(),
+                  border:
+                      OutlineInputBorder(borderSide: BorderSide(width: 0.5)),
                 ),
               ),
               const SizedBox(height: 20),

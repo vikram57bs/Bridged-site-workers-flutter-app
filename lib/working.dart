@@ -17,6 +17,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_memory_image/cached_memory_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 void main() {
   runApp(const MyAppp());
@@ -39,7 +40,7 @@ class MyAppp extends StatelessWidget {
       title: 'Job Openings',
       theme: ThemeData(
         primarySwatch: Colors.brown,
-        scaffoldBackgroundColor: Colors.brown,
+        scaffoldBackgroundColor: Colors.grey,
       ),
       home: const HomePage(),
     );
@@ -171,27 +172,27 @@ class _HomePageState extends State<HomePage> {
               title: const Text(
                 'BRIDGED',
                 style: TextStyle(
-                    color: Colors.white), // Set the text color to white
+                    color: Colors.black), // Set the text color to white
               ),
-              backgroundColor: const Color.fromARGB(255, 10, 3, 0),
-              foregroundColor: Colors.brown,
+              backgroundColor: const Color.fromARGB(255, 244, 248, 168),
+              foregroundColor: const Color.fromARGB(255, 0, 0, 0),
               centerTitle: true,
             ),
             drawer: Drawer(
-              backgroundColor: Colors.brown,
+              backgroundColor: const Color.fromARGB(255, 0, 0, 0),
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: <Widget>[
                   UserAccountsDrawerHeader(
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 10, 3, 0),
+                      color: const Color.fromARGB(255, 244, 248, 168),
                     ),
                     accountName: mydata.length == 0
                         ? Text("loading..")
                         : Text(
                             '${mydata[0]["name"]}',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),
@@ -200,7 +201,7 @@ class _HomePageState extends State<HomePage> {
                         ? Text("loading..")
                         : Text(
                             '${mydata[0]["city"]}',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: Colors.black),
                           ),
                     currentAccountPicture: CircleAvatar(
                         backgroundImage: mydata[0]["profile_photo"].length == 3
@@ -333,11 +334,96 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                Text("check your connection or wait while we load!")
+                //CircularProgressIndicator(),
+                Text("BRIDGED",
+                    style:
+                        TextStyle(fontSize: 50.0, fontWeight: FontWeight.w700))
               ],
             ),
           ));
+  }
+}
+
+//import 'package:flutter/material.dart';
+//import 'package:flutter/material.dart';
+
+class SkeletonLoader extends StatelessWidget {
+  final double height;
+  final double width;
+  final bool isCircular;
+
+  // Constructor to allow customization of size and type (circular or rectangular)
+  SkeletonLoader(
+      {this.height = 20.0,
+      this.width = double.infinity,
+      this.isCircular = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!, // Light gray for base color
+      highlightColor: Colors.grey[100]!, // Darker gray for highlight
+      child: isCircular
+          ? Container(
+              height: height,
+              width: height,
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                shape: BoxShape.circle,
+              ),
+            )
+          : Container(
+              height: height,
+              width: width,
+              color: Colors.grey,
+            ),
+    );
+  }
+}
+
+class PostSkeletonList extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount:
+          5, // Number of skeletons to display (e.g., 5 placeholder posts)
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Profile picture (circular)
+                  SkeletonLoader(
+                    height: 50,
+                    width: 50,
+                    isCircular: true,
+                  ),
+                  SizedBox(height: 10),
+
+                  // Post title (rectangle)
+                  SkeletonLoader(
+                    height: 20,
+                    width: 200,
+                  ),
+                  SizedBox(height: 5),
+
+                  // Post content (rectangle)
+                  SkeletonLoader(
+                    height: 15,
+                    width: 250,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -1060,7 +1146,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                     },
                   ),
                 )
-              : const CircularProgressIndicator(),
+              : Expanded(child: PostSkeletonList()),
         ],
       ),
     );
@@ -2660,17 +2746,17 @@ class _GroupsPageState extends State<GroupsPage> {
                   onPressed: () => _showAddGroupModal(context),
                   child: const Text('Add Group'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color.fromARGB(255, 10, 3, 0), // Button color
-                  ),
+                      backgroundColor: const Color.fromARGB(255, 10, 3, 0),
+                      foregroundColor: Colors.white // Button color
+                      ),
                 ),
                 ElevatedButton(
                   onPressed: () => _showJoinGroupModal(context),
                   child: const Text('Join Group'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color.fromARGB(255, 10, 3, 0), // Button color
-                  ),
+                      backgroundColor: const Color.fromARGB(255, 10, 3, 0),
+                      // Button color
+                      foregroundColor: Colors.white),
                 ),
                 DropdownButton<String>(
                   value: filt_size,
@@ -5340,55 +5426,59 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(
-                          top: 16.0, right: 18.0, bottom: 16.0, left: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              projectDetails(context, piiid);
-                            },
-                            child: const Text('Project Details'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color.fromARGB(255, 10, 3, 0),
+                          top: 16.0, right: 50.0, bottom: 16.0, left: 8.0),
+                      child: SafeArea(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                projectDetails(context, piiid);
+                              },
+                              child: const Text('Project Details'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color.fromARGB(255, 10, 3, 0),
+                              ),
                             ),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              grpspecific(piiid);
-                              _showManageMModal(context, "All Groups");
-                            },
-                            child: const Text('View Groups'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color.fromARGB(255, 10, 3, 0),
+                            ElevatedButton(
+                              onPressed: () {
+                                grpspecific(piiid);
+                                _showManageMModal(context, "All Groups");
+                              },
+                              child: const Text('View Groups'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color.fromARGB(255, 10, 3, 0),
+                              ),
                             ),
-                          ),
-                          (items
-                                          .where((poss) => poss["_id"] == piiid)
-                                          .toList()[0]["workers"]["completed"]
-                                              ["individual"]
-                                          .length +
-                                      items
-                                          .where((poss) => poss["_id"] == piiid)
-                                          .toList()[0]["workers"]["completed"]
-                                              ["group"]
-                                          .length ==
-                                  0)
-                              ? ElevatedButton(
-                                  onPressed: () async {
-                                    await completejob(piiid);
-                                    await fetchItems();
-                                  },
-                                  child: const Text('Finish'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        const Color.fromARGB(255, 10, 3, 0),
-                                  ),
-                                )
-                              : const SizedBox(width: 1.0),
-                        ],
+                            (items
+                                            .where(
+                                                (poss) => poss["_id"] == piiid)
+                                            .toList()[0]["workers"]["completed"]
+                                                ["individual"]
+                                            .length +
+                                        items
+                                            .where(
+                                                (poss) => poss["_id"] == piiid)
+                                            .toList()[0]["workers"]["completed"]
+                                                ["group"]
+                                            .length ==
+                                    0)
+                                ? ElevatedButton(
+                                    onPressed: () async {
+                                      await completejob(piiid);
+                                      await fetchItems();
+                                    },
+                                    child: const Text('Finish'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          const Color.fromARGB(255, 10, 3, 0),
+                                    ),
+                                  )
+                                : const SizedBox(width: 1.0),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -5484,56 +5574,63 @@ class _ManageWorkersContentState extends State<_ManageWorkersContent> {
                         },
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            // Handle Add Member action
-                            projectDetails(context, piiid);
-                          },
-                          child: const Text('Project Details'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(
-                                255, 10, 3, 0), // Button color
-                          ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 38.0),
+                      child: SafeArea(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                // Handle Add Member action
+                                projectDetails(context, piiid);
+                              },
+                              child: const Text('Project Details'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color.fromARGB(
+                                    255, 10, 3, 0), // Button color
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Handle Change Admin action
+                                grpspecific(piiid);
+                                _showManageMModal(context, "All Groups");
+                              },
+                              child: const Text('View Groups'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color.fromARGB(
+                                    255, 10, 3, 0), // Button color
+                              ),
+                            ),
+                            items
+                                            .where(
+                                                (poss) => poss["_id"] == piiid)
+                                            .toList()[0]["workers"]["completed"]
+                                                ["individual"]
+                                            .length +
+                                        items
+                                            .where(
+                                                (poss) => poss["_id"] == piiid)
+                                            .toList()[0]["workers"]["completed"]
+                                                ["group"]
+                                            .length ==
+                                    0
+                                ? ElevatedButton(
+                                    onPressed: () async {
+                                      await completejob(piiid);
+                                      await fetchItems();
+                                    },
+                                    child: const Text('Finish'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color.fromARGB(
+                                          255, 10, 3, 0), // Button color
+                                    ),
+                                  )
+                                : const SizedBox(width: 1.0),
+                          ],
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            // Handle Change Admin action
-                            grpspecific(piiid);
-                            _showManageMModal(context, "All Groups");
-                          },
-                          child: const Text('View Groups'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(
-                                255, 10, 3, 0), // Button color
-                          ),
-                        ),
-                        items
-                                        .where((poss) => poss["_id"] == piiid)
-                                        .toList()[0]["workers"]["completed"]
-                                            ["individual"]
-                                        .length +
-                                    items
-                                        .where((poss) => poss["_id"] == piiid)
-                                        .toList()[0]["workers"]["completed"]
-                                            ["group"]
-                                        .length ==
-                                0
-                            ? ElevatedButton(
-                                onPressed: () async {
-                                  await completejob(piiid);
-                                  await fetchItems();
-                                },
-                                child: const Text('Finish'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(
-                                      255, 10, 3, 0), // Button color
-                                ),
-                              )
-                            : const SizedBox(width: 1.0),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -6881,7 +6978,7 @@ class _ContractorPageState extends State<ContractorPage> {
           ? Column(
               children: [
                 items.isEmpty
-                    ? Center(child: CircularProgressIndicator())
+                    ? Expanded(child: PostSkeletonList())
                     : Expanded(
                         child: ListView.builder(
                           itemCount: int.parse(

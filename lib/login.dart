@@ -82,54 +82,137 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange[100],
-      appBar: AppBar(
+      //backgroundColor: Colors.grey[400],
+      /* appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 244, 248, 168),
         title: Center(
             child: Text(
           'Login',
           style: TextStyle(color: Colors.black),
         )),
         automaticallyImplyLeading: false,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.only(top: 20.0, left: 10.0, right: 10.0),
+      ),*/
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white,
+              Colors.grey[400]!
+            ], // Gradient from white to grey
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(top: 100.0, left: 10.0, right: 10.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              TextField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Username',
-                  border: OutlineInputBorder(),
+              TweenAnimationBuilder(
+                tween: Tween<double>(begin: 0.0, end: 1.0),
+                duration: Duration(seconds: 3),
+                builder: (context, double value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: child,
+                  );
+                },
+                child: Image.asset(
+                  'images/applogico.png',
+                  width: 120.0,
+                  height: 100.0,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, top: 50.0),
+                child: SizedBox(
+                  width: 250.0,
+                  child: TextField(
+                    controller: _usernameController,
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      labelStyle: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black, width: 3.0),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white, width: 3.0),
+                      ),
+                    ),
+                    cursorColor: Colors.black,
+                    style: TextStyle(fontSize: 18),
+                  ),
                 ),
               ),
               SizedBox(height: 16.0),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: SizedBox(
+                  width: 250.0,
+                  child: TextField(
+                    obscureText: true,
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      labelStyle: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black, width: 3.0),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white, width: 3.0),
+                      ),
+                    ),
+                    cursorColor: Colors.black,
+                    style: TextStyle(fontSize: 18),
+                  ),
                 ),
               ),
               SizedBox(height: 24.0),
-              ElevatedButton(
-                onPressed: _login,
-                child: Text('Submit'),
+              Padding(
+                padding: const EdgeInsets.only(left: 15.0, top: 20.0),
+                child: ElevatedButton(
+                  onPressed: _login,
+                  style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStateProperty.all<Color>(Colors.black),
+                      foregroundColor:
+                          MaterialStateProperty.all<Color>(Colors.white)),
+                  child: Text('LOGIN'),
+                ),
               ),
               SizedBox(height: 24.0),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            MyHomePage()), // Navigate to LoginPage
-                  );
-                },
-                child: Text('no account ? sign up'),
+              Padding(
+                padding: const EdgeInsets.only(left: 18.0),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      foregroundColor:
+                          Colors.black, // Makes the background transparent
+                      //backgroundBuilder: Colors.transparent, // Makes the surface (when disabled) transparent as well
+                      shadowColor: Colors.transparent,
+                      backgroundColor: Colors
+                          .transparent // Optional: Makes the shadow transparent
+                      ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              MyHomePage()), // Navigate to LoginPage
+                    );
+                  },
+                  child: Text('NO ACCOUNT? SIGN UP'),
+                ),
               ),
             ],
           ),

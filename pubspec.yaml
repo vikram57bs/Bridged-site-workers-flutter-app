@@ -50,6 +50,8 @@ dependencies:
   flutter_cache_manager: ^3.4.1
   intl: ^0.20.2
   cached_memory_image: ^1.5.0
+  flutter_login: ^5.0.0
+  shimmer: ^3.0.0
   
 
 dev_dependencies:
@@ -78,6 +80,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - images/logo.png
+    - images/applogico.png
     - assets/.env
 
   # An image asset can refer to one or more resolution-specific "variants", see
